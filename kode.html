@@ -271,7 +271,10 @@ function getInitialData() {
     namaPemilikRekening: String(settings['Nama_Pemilik_Rekening'] || 'Andri Illa'),
     noWaAdmin: String(settings['No_WA_Admin'] || '08215075520'),
     gmailPemilik: String(settings['Gmail_Pemilik'] || ''),
-    logoUrl: String(settings['Logo_Url'] || '')
+    logoUrl: String(settings['Logo_Url'] || ''),
+    geminiApiKey: String(settings['Gemini_Api_Key'] || ''),
+    geminiAutoEnhance: String(settings['Gemini_Auto_Enhance'] || 'TRUE').toUpperCase() !== 'FALSE',
+    geminiPrompt: String(settings['Gemini_Prompt'] || 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.')
   };
 
   return {
@@ -644,16 +647,104 @@ function adminSaveProduct(pin, prod) {
 }
 
 /**
- * UPLOAD GAMBAR KE GOOGLE DRIVE
+ * GEMINI AI STUDIO FLOW: TRANSFORMASI FOTO PRODUK OTOMATIS
  */
-function adminUploadImageToDrive(pin, base64Data, fileName, mimeType) {
+function enhanceImageWithGemini(rawBase64, mimeType, promptText, apiKeyOverride) {
+  const settings = getSettingsMap();
+  const apiKey = String(apiKeyOverride || settings['Gemini_Api_Key'] || '').trim();
+  if (!apiKey) {
+    return { enhanced: false, base64: rawBase64, mimeType: mimeType || 'image/jpeg', reason: 'API Key Gemini belum diisi' };
+  }
+
+  const defaultPrompt = 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.';
+  const activePrompt = String(promptText || settings['Gemini_Prompt'] || defaultPrompt).trim();
+  const fullInstruction =
+    'Transform this product photo into: ' + activePrompt +
+    ' Keep the main product authentic, intact, well-proportioned, and centered.';
+
+  const models = ['gemini-2.5-flash-image', 'gemini-2.0-flash-exp-image-generation'];
+
+  for (let m = 0; m < models.length; m++) {
+    const modelName = models[m];
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + encodeURIComponent(apiKey);
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            { text: fullInstruction },
+            {
+              inline_data: {
+                mime_type: mimeType || 'image/jpeg',
+                data: rawBase64
+              }
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        responseModalities: ['TEXT', 'IMAGE']
+      }
+    };
+
+    try {
+      const response = UrlFetchApp.fetch(endpoint, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
+
+      if (response.getResponseCode() === 200) {
+        const json = JSON.parse(response.getContentText());
+        const candidates = json.candidates || [];
+        for (let i = 0; i < candidates.length; i++) {
+          const parts = (candidates[i].content && candidates[i].content.parts) || [];
+          for (let j = 0; j < parts.length; j++) {
+            const inline = parts[j].inlineData || parts[j].inline_data;
+            if (inline && inline.data) {
+              return {
+                enhanced: true,
+                base64: inline.data,
+                mimeType: inline.mimeType || inline.mime_type || 'image/png',
+                model: modelName
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return { enhanced: false, base64: rawBase64, mimeType: mimeType || 'image/jpeg', reason: 'Gagal memproses di Gemini API' };
+}
+
+/**
+ * UPLOAD GAMBAR KE GOOGLE DRIVE (OTOMATIS LEWAT GEMINI STUDIO FLOW JIKA AKTIF)
+ */
+function adminUploadImageToDrive(pin, base64Data, fileName, mimeType, skipServerAi) {
   if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
 
   try {
     const splitBase64 = String(base64Data || '').split(',');
-    const rawBase64 = splitBase64.length > 1 ? splitBase64[1] : splitBase64[0];
+    let rawBase64 = splitBase64.length > 1 ? splitBase64[1] : splitBase64[0];
+    let finalMimeType = mimeType || 'image/jpeg';
+    let aiEnhanced = false;
+
+    const settings = getSettingsMap();
+    const autoEnhance = String(settings['Gemini_Auto_Enhance'] || 'TRUE').toUpperCase() !== 'FALSE';
+
+    if (autoEnhance && !skipServerAi) {
+      const geminiRes = enhanceImageWithGemini(rawBase64, finalMimeType, settings['Gemini_Prompt'], settings['Gemini_Api_Key']);
+      if (geminiRes && geminiRes.enhanced && geminiRes.base64) {
+        rawBase64 = geminiRes.base64;
+        finalMimeType = geminiRes.mimeType || finalMimeType;
+        aiEnhanced = true;
+      }
+    }
+
     const decoded = Utilities.base64Decode(rawBase64);
-    const blob = Utilities.newBlob(decoded, mimeType || 'image/jpeg', fileName || ('produk_' + Date.now() + '.jpg'));
+    const blob = Utilities.newBlob(decoded, finalMimeType, fileName || ('produk_' + Date.now() + '.jpg'));
 
     const folderName = 'Hibualamo_Store_Assets';
     const folders = DriveApp.getFoldersByName(folderName);
@@ -668,12 +759,16 @@ function adminUploadImageToDrive(pin, base64Data, fileName, mimeType) {
       success: true,
       fileId: fileId,
       url: directUrl,
-      message: 'Foto berhasil diunggah ke Google Drive!'
+      aiEnhanced: aiEnhanced,
+      message: aiEnhanced
+        ? 'Foto berhasil dipercantik dengan Gemini AI & disimpan ke Google Drive!'
+        : 'Foto berhasil diunggah ke Google Drive!'
     };
   } catch (err) {
     return {
       success: true,
       url: base64Data,
+      aiEnhanced: false,
       message: 'Menggunakan gambar terkompresi langsung.'
     };
   }
@@ -879,7 +974,12 @@ function adminSavePaymentSettings(pin, newPay) {
     if (newPay.namaPemilikRekening !== undefined) setSettingValue('Nama_Pemilik_Rekening', String(newPay.namaPemilikRekening));
     if (newPay.noWaAdmin !== undefined) setSettingValue('No_WA_Admin', String(newPay.noWaAdmin));
     if (newPay.gmailPemilik !== undefined) setSettingValue('Gmail_Pemilik', String(newPay.gmailPemilik));
+    if (newPay.geminiApiKey !== undefined) setSettingValue('Gemini_Api_Key', String(newPay.geminiApiKey).trim());
+    if (newPay.geminiAutoEnhance !== undefined) setSettingValue('Gemini_Auto_Enhance', newPay.geminiAutoEnhance ? 'TRUE' : 'FALSE');
+    if (newPay.geminiPrompt !== undefined) setSettingValue('Gemini_Prompt', String(newPay.geminiPrompt).trim());
   }
+
+  SpreadsheetApp.flush();
 
   return {
     success: true,
