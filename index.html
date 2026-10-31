@@ -418,6 +418,30 @@
             </div>
           </div>
 
+          <!-- PENGATURAN AUTO-GENERATE FOTO PRODUK GEMINI AI -->
+          <div class="bg-indigo-50/70 p-4 rounded-xl border border-indigo-200 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Auto-Generate Foto Produk Gemini AI (Studio Flow)
+              </h3>
+              <label class="flex items-center gap-2 cursor-pointer select-none font-extrabold text-indigo-700 bg-white px-3 py-1 rounded-lg border border-indigo-200">
+                <input id="admPayGeminiAuto" type="checkbox" checked class="w-4 h-4 accent-indigo-600 rounded">
+                <span>Aktifkan Otomatis Saat Jepret / Upload</span>
+              </label>
+            </div>
+            <p class="text-[11px] text-slate-600">Setiap foto yang diambil lewat kamera atau diunggah akan otomatis diproses dengan Gemini AI menjadi foto produk komersial berkualitas studio.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Gemini API Key (Google AI Studio)</label>
+                <input id="admPayGeminiKey" type="password" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Prompt Gemini Flow Otomatis</label>
+                <input id="admPayGeminiPrompt" type="text" value="Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+            </div>
+          </div>
+
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
             <h3 class="font-extrabold text-slate-800 text-sm">Pengaturan Pembayaran, Logo & Kontak Toko</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -777,7 +801,7 @@
   <script>
     // Jika Anda menghosting HTML ini di luar Google Apps Script (misal Vercel / GitHub),
     // tempelkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzcUp3r0ssW5HNVzlh5QXH-jfUxdQ2CkpETlS5K2D1M5NbzmVkla2jH4HJR40vd-OyhyA/exec';
+    const GAS_API_URL = '';
 
     const DUMMY_PRODUCT_IDS = ['PRD-001', 'PRD-002', 'PRD-003', 'PRD-004', 'PRD-005', 'PRD-006', 'PRD-007', 'PRD-008'];
 
@@ -981,7 +1005,10 @@
         namaPemilikRekening: 'Andri Illa',
         noWaAdmin: '08215075520',
         gmailPemilik: '',
-        logoUrl: ''
+        logoUrl: '',
+        geminiApiKey: '',
+        geminiAutoEnhance: true,
+        geminiPrompt: 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.'
       },
       savedGasApiUrl: '',
       localAdminPin: 'Jangan@123',
@@ -992,6 +1019,7 @@
       selectedDetailVariant: 'Standar',
       detailQty: 1,
       editingProductId: '',
+      cameraTargetProductId: '',
       editingReviewId: '',
       visitorId: '',
       visitorStats: {
@@ -1092,6 +1120,198 @@
       return Boolean(getActiveGasApiUrl());
     }
 
+    function verifyLocalPin(inputPin) {
+      const clean = String(inputPin || '').trim();
+      return clean === String(state.localAdminPin || 'Jangan@123').trim() || clean === 'Jangan@123';
+    }
+
+    function saveLocalState() {
+      try {
+        localStorage.setItem('HibualamoStore_produk', JSON.stringify(state.produk));
+        localStorage.setItem('HibualamoStore_ulasan', JSON.stringify(state.ulasan));
+        localStorage.setItem('HibualamoStore_supplier', JSON.stringify(state.supplier));
+        localStorage.setItem('HibualamoStore_kategoriList', JSON.stringify(state.kategoriList));
+        localStorage.setItem('HibualamoStore_subKategoriMap', JSON.stringify(state.subKategoriMap));
+        localStorage.setItem('HibualamoStore_cart', JSON.stringify(state.cart));
+        localStorage.setItem('HibualamoStore_localOrders', JSON.stringify(state.localOrders));
+        localStorage.setItem('HibualamoStore_lockedProductIds', JSON.stringify(state.lockedProductIds));
+        localStorage.setItem('HibualamoStore_hideDummyProducts', JSON.stringify(Boolean(state.hideDummyProducts)));
+        localStorage.setItem('HibualamoStore_pengaturanBayar', JSON.stringify(state.pengaturanBayar));
+        if (state.savedGasApiUrl) {
+          localStorage.setItem('HibualamoStore_gasApiUrl', state.savedGasApiUrl);
+        }
+        if (state.localAdminPin) {
+          localStorage.setItem('HibualamoStore_adminPin', state.localAdminPin);
+        }
+      } catch (e) {}
+    }
+
+    function loadLocalState() {
+      try {
+        const savedGas = localStorage.getItem('HibualamoStore_gasApiUrl');
+        if (savedGas) state.savedGasApiUrl = savedGas.trim();
+
+        const savedPin = localStorage.getItem('HibualamoStore_adminPin');
+        if (savedPin) state.localAdminPin = savedPin;
+
+        const savedHideDummy = localStorage.getItem('HibualamoStore_hideDummyProducts');
+        if (savedHideDummy !== null) state.hideDummyProducts = JSON.parse(savedHideDummy) === true;
+
+        const savedLocked = localStorage.getItem('HibualamoStore_lockedProductIds');
+        if (savedLocked) {
+          const parsedLocked = JSON.parse(savedLocked);
+          if (Array.isArray(parsedLocked)) state.lockedProductIds = parsedLocked.map(id => String(id).trim()).filter(Boolean);
+        }
+
+        const savedProduk = localStorage.getItem('HibualamoStore_produk');
+        if (savedProduk) {
+          const parsed = JSON.parse(savedProduk);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            state.produk = parsed.map((p, i) => normalizeProduct(p, i)).filter(Boolean);
+          }
+        }
+
+        const savedUlasan = localStorage.getItem('HibualamoStore_ulasan');
+        if (savedUlasan) {
+          const parsed = JSON.parse(savedUlasan);
+          if (Array.isArray(parsed)) state.ulasan = parsed.map((r, i) => normalizeReview(r, i)).filter(Boolean);
+        }
+
+        const savedSupplier = localStorage.getItem('HibualamoStore_supplier');
+        if (savedSupplier) {
+          const parsed = JSON.parse(savedSupplier);
+          if (Array.isArray(parsed) && parsed.length > 0) state.supplier = parsed;
+        }
+
+        const savedKategori = localStorage.getItem('HibualamoStore_kategoriList');
+        if (savedKategori) {
+          const parsed = JSON.parse(savedKategori);
+          if (Array.isArray(parsed) && parsed.length > 0) state.kategoriList = parsed;
+        }
+
+        const savedSubKat = localStorage.getItem('HibualamoStore_subKategoriMap');
+        if (savedSubKat) {
+          const parsed = JSON.parse(savedSubKat);
+          if (parsed && typeof parsed === 'object') state.subKategoriMap = parsed;
+        }
+
+        const savedCart = localStorage.getItem('HibualamoStore_cart');
+        if (savedCart) {
+          const parsed = JSON.parse(savedCart);
+          if (Array.isArray(parsed)) state.cart = parsed;
+        }
+
+        const savedOrders = localStorage.getItem('HibualamoStore_localOrders');
+        if (savedOrders) {
+          const parsed = JSON.parse(savedOrders);
+          if (Array.isArray(parsed)) state.localOrders = parsed;
+        }
+
+        const savedPay = localStorage.getItem('HibualamoStore_pengaturanBayar');
+        if (savedPay) {
+          const parsed = JSON.parse(savedPay);
+          if (parsed && typeof parsed === 'object') {
+            state.pengaturanBayar = { ...state.pengaturanBayar, ...parsed };
+          }
+        }
+      } catch (e) {}
+    }
+
+    function callServerJsonp(apiUrl, action, args) {
+      return new Promise((resolve) => {
+        const cbName = 'hibualamo_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        const script = document.createElement('script');
+        let settled = false;
+
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          delete window[cbName];
+          script.remove();
+          resolve(null);
+        }, 12000);
+
+        window[cbName] = (data) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          delete window[cbName];
+          script.remove();
+          resolve(data);
+        };
+
+        const sep = apiUrl.includes('?') ? '&' : '?';
+        script.src = `${apiUrl}${sep}action=${encodeURIComponent(action)}&args=${encodeURIComponent(JSON.stringify(args || []))}&callback=${cbName}&_t=${Date.now()}`;
+        script.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          delete window[cbName];
+          script.remove();
+          resolve(null);
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    async function callServer(action, ...args) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return new Promise((resolve) => {
+          google.script.run
+            .withSuccessHandler((res) => resolve(res))
+            .withFailureHandler(() => resolve({ success: false }))[action](...args);
+        });
+      }
+
+      const apiUrl = getActiveGasApiUrl();
+      if (apiUrl) {
+        try {
+          const resp = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action, args })
+          });
+          if (resp.ok) {
+            return await resp.json();
+          }
+        } catch (e) {
+          const jsonpRes = await callServerJsonp(apiUrl, action, args);
+          if (jsonpRes) return jsonpRes;
+        }
+      }
+
+      return { success: true };
+    }
+
+    function initVisitorTracking() {
+      try {
+        let vid = localStorage.getItem('HibualamoStore_visitorId');
+        if (!vid) {
+          vid = 'VIS-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
+          localStorage.setItem('HibualamoStore_visitorId', vid);
+        }
+        state.visitorId = vid;
+        callServer('pingVisitor', vid).then(res => {
+          if (res && res.visitorStats) {
+            state.visitorStats = res.visitorStats;
+            renderAdminVisitorStats();
+          }
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    async function refreshAdminVisitorStats() {
+      const icon = document.getElementById('admRefreshVisitorIcon');
+      if (icon) icon.classList.add('fa-spin');
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const res = await callServer('adminGetVisitorStats', pin);
+      if (res && res.visitorStats) {
+        state.visitorStats = res.visitorStats;
+        renderAdminVisitorStats();
+      }
+      setTimeout(() => icon?.classList.remove('fa-spin'), 400);
+    }
+
     function normalizeProduct(p, idx = 0) {
       if (!p || typeof p !== 'object') return null;
       const prodId = String(p.id || p.ID_Produk || ('PRD-' + (idx + 1))).trim();
@@ -1114,8 +1334,7 @@
       }
       if (varianArr.length === 0) varianArr = ['Standar'];
 
-      const isUnlockedLocally = Array.isArray(state.unlockedProductIds) && state.unlockedProductIds.includes(prodId);
-      const isProdLocked = !isUnlockedLocally && Boolean(
+      const isProdLocked = Boolean(
         p.isLocked === true ||
         String(p.isLocked).toUpperCase() === 'TRUE' ||
         hasLockMarker ||
@@ -1192,6 +1411,12 @@
         if (state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)) return;
         if (!map.has(p.id)) {
           map.set(p.id, p);
+        } else {
+          // Sinkronkan status isLocked terbaru
+          const existing = map.get(p.id);
+          if (Array.isArray(state.lockedProductIds) && state.lockedProductIds.includes(p.id)) {
+            existing.isLocked = true;
+          }
         }
       });
 
@@ -1199,450 +1424,64 @@
       return merged.length > 0 ? merged : normalizedRemote;
     }
 
-    function loadLocalState() {
-      try {
-        const savedGasUrl = localStorage.getItem('HibualamoStore_gasApiUrl');
-        if (savedGasUrl && savedGasUrl.startsWith('https://script.google.com/')) {
-          state.savedGasApiUrl = savedGasUrl.trim();
-        }
-        const savedHideDummy = localStorage.getItem('HibualamoStore_hideDummyProducts');
-        if (savedHideDummy === 'true') {
-          state.hideDummyProducts = true;
-        }
-        const savedLockedProds = localStorage.getItem('HibualamoStore_lockedProductIds');
-        if (savedLockedProds) {
-          const parsedLocked = JSON.parse(savedLockedProds);
-          if (Array.isArray(parsedLocked)) {
-            state.lockedProductIds = parsedLocked.map(id => String(id).trim()).filter(Boolean);
-          }
-        }
-        const savedUnlockedProds = localStorage.getItem('HibualamoStore_unlockedProductIds');
-        if (savedUnlockedProds) {
-          const parsedUnlocked = JSON.parse(savedUnlockedProds);
-          if (Array.isArray(parsedUnlocked)) {
-            state.unlockedProductIds = parsedUnlocked.map(id => String(id).trim()).filter(Boolean);
-          }
-        }
-        const savedProds = localStorage.getItem('HibualamoStore_produk');
-        if (savedProds) {
-          const parsedProds = JSON.parse(savedProds);
-          if (Array.isArray(parsedProds) && parsedProds.length > 0) {
-            state.produk = mergeProductsPreservingCustom(parsedProds, state.produk);
-          }
-        }
-        const savedCats = localStorage.getItem('HibualamoStore_kategoriList');
-        if (savedCats) {
-          const parsedCats = JSON.parse(savedCats);
-          if (Array.isArray(parsedCats) && parsedCats.length > 0) {
-            state.kategoriList = parsedCats;
-          }
-        }
-        const savedSubCats = localStorage.getItem('HibualamoStore_subKategoriMap');
-        if (savedSubCats) {
-          const parsedSub = JSON.parse(savedSubCats);
-          if (parsedSub && typeof parsedSub === 'object') {
-            state.subKategoriMap = parsedSub;
-          }
-        }
-        const savedReviews = localStorage.getItem('HibualamoStore_ulasan');
-        if (savedReviews) {
-          const parsedRev = JSON.parse(savedReviews);
-          if (Array.isArray(parsedRev) && parsedRev.length > 0) {
-            state.ulasan = parsedRev.map((r, idx) => normalizeReview(r, idx)).filter(Boolean);
-          }
-        }
-        const savedSuppliers = localStorage.getItem('HibualamoStore_supplier');
-        if (savedSuppliers) {
-          const parsedSup = JSON.parse(savedSuppliers);
-          if (Array.isArray(parsedSup) && parsedSup.length > 0) {
-            state.supplier = parsedSup;
-          }
-        }
-        const savedOrders = localStorage.getItem('HibualamoStore_orders');
-        if (savedOrders) {
-          const parsedOrd = JSON.parse(savedOrders);
-          if (Array.isArray(parsedOrd)) {
-            state.localOrders = parsedOrd;
-          }
-        }
-        const savedCart = localStorage.getItem('HibualamoStore_cart');
-        if (savedCart) {
-          const parsedCart = JSON.parse(savedCart);
-          if (Array.isArray(parsedCart)) {
-            state.cart = parsedCart;
-          }
-        }
-        const savedPay = localStorage.getItem('HibualamoStore_pengaturanBayar');
-        if (savedPay) {
-          const parsedPay = JSON.parse(savedPay);
-          if (parsedPay && typeof parsedPay === 'object') {
-            state.pengaturanBayar = { ...state.pengaturanBayar, ...parsedPay };
-          }
-        }
-        const savedPin = localStorage.getItem('HibualamoStore_adminPin');
-        if (savedPin) {
-          state.localAdminPin = savedPin;
-        }
-      } catch (e) {
-        console.warn('Gagal memuat localStorage:', e);
+    function applyServerDataToState(res, remoteConnected) {
+      if (!res || !res.success) return;
+
+      if (typeof res.hideDummyProducts === 'boolean') {
+        state.hideDummyProducts = res.hideDummyProducts;
       }
-    }
-
-    function saveLocalState() {
-      try {
-        if (state.savedGasApiUrl) {
-          localStorage.setItem('HibualamoStore_gasApiUrl', state.savedGasApiUrl);
-        }
-        localStorage.setItem('HibualamoStore_hideDummyProducts', String(Boolean(state.hideDummyProducts)));
-        localStorage.setItem('HibualamoStore_lockedProductIds', JSON.stringify(state.lockedProductIds || []));
-        localStorage.setItem('HibualamoStore_unlockedProductIds', JSON.stringify(state.unlockedProductIds || []));
-        localStorage.setItem('HibualamoStore_produk', JSON.stringify(state.produk || []));
-        localStorage.setItem('HibualamoStore_kategoriList', JSON.stringify(state.kategoriList || []));
-        localStorage.setItem('HibualamoStore_subKategoriMap', JSON.stringify(state.subKategoriMap || {}));
-        localStorage.setItem('HibualamoStore_ulasan', JSON.stringify(state.ulasan || []));
-        localStorage.setItem('HibualamoStore_supplier', JSON.stringify(state.supplier || []));
-        localStorage.setItem('HibualamoStore_orders', JSON.stringify(state.localOrders || []));
-        localStorage.setItem('HibualamoStore_cart', JSON.stringify(state.cart || []));
-        localStorage.setItem('HibualamoStore_pengaturanBayar', JSON.stringify(state.pengaturanBayar || {}));
-        localStorage.setItem('HibualamoStore_adminPin', state.localAdminPin || 'Jangan@123');
-      } catch (e) {
-        console.warn('Gagal menyimpan ke localStorage:', e);
+      if (Array.isArray(res.lockedProductIds)) {
+        state.lockedProductIds = res.lockedProductIds.map(id => String(id).trim()).filter(Boolean);
+        state.unlockedProductIds = [];
       }
-    }
-
-    function callServerJsonp(apiUrl, action, args) {
-      return new Promise((resolve, reject) => {
-        const cbName = 'hibualamoJsonpCb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-        const script = document.createElement('script');
-        let timer = null;
-
-        function cleanup() {
-          if (timer) clearTimeout(timer);
-          delete window[cbName];
-          if (script.parentNode) script.parentNode.removeChild(script);
+      if (Array.isArray(res.produk) && res.produk.length > 0) {
+        if (remoteConnected) {
+          state.produk = res.produk
+            .map((p, i) => normalizeProduct(p, i))
+            .filter(Boolean)
+            .filter(p => !(state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)));
+        } else {
+          state.produk = mergeProductsPreservingCustom(res.produk, state.produk);
         }
-
-        window[cbName] = function(data) {
-          cleanup();
-          resolve(data);
-        };
-
-        script.onerror = function() {
-          cleanup();
-          reject(new Error('JSONP request gagal'));
-        };
-
-        timer = setTimeout(() => {
-          cleanup();
-          reject(new Error('JSONP timeout'));
-        }, 12000);
-
-        const encodedArgs = encodeURIComponent(JSON.stringify(args || []));
-        const sep = apiUrl.includes('?') ? '&' : '?';
-        script.src = `${apiUrl}${sep}action=${encodeURIComponent(action)}&args=${encodedArgs}&callback=${cbName}&_t=${Date.now()}`;
-        document.body.appendChild(script);
+      }
+      // Pastikan setiap produk di state mengikuti daftar lockedProductIds terbaru
+      state.produk.forEach(p => {
+        const pid = String(p.id || '').trim();
+        if (state.lockedProductIds.includes(pid)) {
+          p.isLocked = true;
+        }
       });
-    }
-
-    async function callServer(action, ...args) {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        return new Promise((resolve) => {
-          google.script.run
-            .withSuccessHandler(res => resolve(res))
-            .withFailureHandler(() => resolve(handleLocalMockAction(action, args)))[action](...args);
+      // Tutup modal detail jika produk yang sedang dilihat baru saja disembunyikan
+      if (state.activeDetailProduct && !isProductVisibleOnWeb(state.activeDetailProduct)) {
+        closeModal('productDetailModal');
+        state.activeDetailProduct = null;
+      }
+      // Bersihkan keranjang dari produk yang disembunyikan
+      if (Array.isArray(state.cart) && state.cart.length > 0) {
+        state.cart = state.cart.filter(item => {
+          const prod = state.produk.find(p => String(p.id) === String(item.id));
+          return prod ? isProductVisibleOnWeb(prod) : true;
         });
       }
-
-      const apiUrl = getActiveGasApiUrl();
-      if (apiUrl) {
-        try {
-          const sep = apiUrl.includes('?') ? '&' : '?';
-          const response = await fetch(`${apiUrl}${sep}_t=${Date.now()}`, {
-            method: 'POST',
-            cache: 'no-store',
-            redirect: 'follow',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action, args })
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data && typeof data === 'object') return data;
-          }
-        } catch (errPost) {
-          const largeActions = ['adminUploadImageToDrive', 'createOrder', 'adminSaveProduct', 'adminSaveSubCategories'];
-          if (!largeActions.includes(action)) {
-            try {
-              const jsonpFallback = await callServerJsonp(apiUrl, action, args);
-              if (jsonpFallback && typeof jsonpFallback === 'object') return jsonpFallback;
-            } catch (errJsonp) {}
-          }
+      if (Array.isArray(res.ulasan)) {
+        if (remoteConnected || res.ulasan.length > 0) {
+          state.ulasan = res.ulasan.map((r, i) => normalizeReview(r, i)).filter(Boolean);
         }
       }
-
-      return handleLocalMockAction(action, args);
-    }
-
-    function verifyLocalPin(inputPin) {
-      const clean = String(inputPin || '').trim();
-      return clean === state.localAdminPin || clean === 'Jangan@123';
-    }
-
-    function handleLocalMockAction(action, args) {
-      switch (action) {
-        case 'getInitialData':
-          return {
-            success: true,
-            produk: state.produk,
-            ulasan: state.ulasan,
-            supplier: state.supplier,
-            kategoriList: state.kategoriList,
-            subKategoriMap: state.subKategoriMap,
-            pengaturanBayar: state.pengaturanBayar,
-            lockedProductIds: state.lockedProductIds,
-            hideDummyProducts: state.hideDummyProducts
-          };
-
-        case 'pingVisitor':
-          return {
-            success: true,
-            visitorStats: state.visitorStats
-          };
-
-        case 'adminGetVisitorStats':
-          if (!verifyLocalPin(args[0])) return { success: false, message: 'Password / PIN Admin salah!' };
-          return {
-            success: true,
-            visitorStats: state.visitorStats
-          };
-
-        case 'createOrder': {
-          const payload = args[0] || {};
-          const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
-          const tanggal = new Date().toLocaleString('id-ID');
-          const ringkasanItem = (payload.items || []).map(it => `${it.qty}x ${it.nama} (${it.varian})`).join(', ');
-          const newOrder = {
-            idPesanan: orderId,
-            tanggal,
-            namaPembeli: payload.namaPembeli,
-            noWa: payload.noWa,
-            alamat: payload.alamat,
-            catatan: payload.catatan || '-',
-            items: payload.items || [],
-            ringkasanItem,
-            subtotal: Number(payload.subtotal) || 0,
-            ongkir: Number(payload.ongkir) || 0,
-            totalBayar: Number(payload.totalBayar) || 0,
-            kurir: payload.kurir,
-            metodeBayar: payload.metodeBayar,
-            status: 'Belum Bayar',
-            noResi: '-'
-          };
-          return { success: true, order: newOrder };
-        }
-
-        case 'trackOrder': {
-          const q = String(args[0] || '').trim().toLowerCase();
-          const qDigits = q.replace(/\D/g, '');
-          const found = state.localOrders.filter(o => {
-            const matchId = String(o.idPesanan || '').toLowerCase().includes(q);
-            const matchWa = qDigits.length >= 4 && String(o.noWa || '').replace(/\D/g, '').includes(qDigits);
-            return matchId || matchWa;
-          });
-          return { success: true, orders: found };
-        }
-
-        case 'submitReview': {
-          const rev = args[0] || {};
-          const reviewObj = {
-            id: 'REV-' + Math.floor(1000 + Math.random() * 9000),
-            idProduk: rev.idProduk || 'PRD-001',
-            nama: rev.namaPembeli || 'Pembeli Hibualamo',
-            rating: Number(rev.rating) || 5,
-            komentar: rev.komentar || '',
-            varian: rev.varian || 'Standar',
-            tanggal: rev.tanggalLokal || new Date().toLocaleDateString('id-ID')
-          };
-          return { success: true, review: reviewObj };
-        }
-
-        case 'adminGetOrders': {
-          if (!verifyLocalPin(args[0])) return { success: false, message: 'Password / PIN Admin salah!' };
-          return {
-            success: true,
-            orders: state.localOrders,
-            produk: state.produk,
-            ulasan: state.ulasan,
-            supplier: state.supplier,
-            kategoriList: state.kategoriList,
-            subKategoriMap: state.subKategoriMap,
-            pengaturanBayar: state.pengaturanBayar,
-            lockedProductIds: state.lockedProductIds,
-            hideDummyProducts: state.hideDummyProducts,
-            visitorStats: state.visitorStats
-          };
-        }
-
-        case 'adminUpdateOrder': {
-          const [pin, idPesanan, statusBaru, resiBaru] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          const ord = state.localOrders.find(o => String(o.idPesanan) === String(idPesanan));
-          if (ord) {
-            ord.status = statusBaru;
-            ord.noResi = resiBaru || '-';
-            saveLocalState();
-          }
-          return { success: true, message: 'Status pesanan diperbarui!' };
-        }
-
-        case 'adminSaveProduct': {
-          const [pin, prod] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          const id = prod.id || ('PRD-' + Math.floor(100 + Math.random() * 900));
-          return { success: true, id, gambar: prod.gambar, message: 'Produk berhasil disimpan!' };
-        }
-
-        case 'adminUploadImageToDrive': {
-          const [pin, base64Data] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          return { success: true, url: base64Data, message: 'Gambar berhasil diproses!' };
-        }
-
-        case 'adminToggleProductLock': {
-          const [pin, idProduk, isLocked] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          const cleanId = String(idProduk || '').trim();
-          if (isLocked) {
-            if (!state.lockedProductIds.includes(cleanId)) state.lockedProductIds.push(cleanId);
-          } else {
-            state.lockedProductIds = state.lockedProductIds.filter(id => id !== cleanId);
-          }
-          saveLocalState();
-          return { success: true, idProduk: cleanId, isLocked, lockedProductIds: state.lockedProductIds };
-        }
-
-        case 'adminSaveReview': {
-          const [pin, revPayload] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          const id = revPayload.id || ('REV-' + Math.floor(1000 + Math.random() * 9000));
-          const review = {
-            id,
-            idProduk: revPayload.idProduk,
-            nama: revPayload.nama,
-            rating: Number(revPayload.rating) || 5,
-            komentar: revPayload.komentar,
-            varian: revPayload.varian || 'Standar',
-            tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-          };
-          return { success: true, review, message: 'Ulasan berhasil disimpan!' };
-        }
-
-        case 'adminDeleteReview': {
-          const [pin] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          return { success: true, message: 'Ulasan berhasil dihapus!' };
-        }
-
-        case 'adminSaveSupplier': {
-          const [pin] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          return { success: true, message: 'Supplier berhasil disimpan!' };
-        }
-
-        case 'adminDeleteSupplier': {
-          const [pin] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          return { success: true, message: 'Supplier berhasil dihapus!' };
-        }
-
-        case 'adminAddCategory': {
-          const [pin, namaKat] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          if (!state.kategoriList.includes(namaKat)) state.kategoriList.push(namaKat);
-          saveLocalState();
-          return { success: true, kategoriList: state.kategoriList, message: 'Kategori ditambahkan!' };
-        }
-
-        case 'adminDeleteCategory': {
-          const [pin, namaKat] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          state.kategoriList = state.kategoriList.filter(k => k !== namaKat);
-          saveLocalState();
-          return { success: true, kategoriList: state.kategoriList, message: 'Kategori dihapus!' };
-        }
-
-        case 'adminSaveSubCategories': {
-          const [pin, subMap] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          state.subKategoriMap = subMap || {};
-          saveLocalState();
-          return { success: true, subKategoriMap: state.subKategoriMap, message: 'Sub-kategori disimpan!' };
-        }
-
-        case 'adminSetHideDummy': {
-          const [pin, hideDummy] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          state.hideDummyProducts = Boolean(hideDummy);
-          saveLocalState();
-          return { success: true, hideDummyProducts: state.hideDummyProducts, message: 'Pengaturan produk dummy disimpan!' };
-        }
-
-        case 'adminSavePaymentSettings': {
-          const [pin, newPay] = args;
-          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
-          state.pengaturanBayar = { ...state.pengaturanBayar, ...newPay };
-          saveLocalState();
-          return { success: true, pengaturanBayar: state.pengaturanBayar, message: 'Pengaturan disimpan!' };
-        }
-
-        case 'adminChangePassword': {
-          const [oldPin, newPin] = args;
-          if (!verifyLocalPin(oldPin)) return { success: false, message: 'Password / PIN lama salah!' };
-          state.localAdminPin = String(newPin).trim();
-          saveLocalState();
-          return { success: true, message: 'Password Admin berhasil diubah!' };
-        }
-
-        default:
-          return { success: true };
+      if (Array.isArray(res.supplier) && res.supplier.length > 0) {
+        state.supplier = res.supplier;
       }
-    }
-
-    function initVisitorTracking() {
-      try {
-        let vid = localStorage.getItem('HibualamoStore_visitorId');
-        if (!vid) {
-          vid = 'VIS-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
-          localStorage.setItem('HibualamoStore_visitorId', vid);
-        }
-        state.visitorId = vid;
-        pingVisitorSession();
-        setInterval(pingVisitorSession, 60000);
-      } catch (e) {}
-    }
-
-    async function pingVisitorSession() {
-      try {
-        const res = await callServer('pingVisitor', state.visitorId);
-        if (res && res.success && res.visitorStats) {
-          state.visitorStats = res.visitorStats;
-          renderAdminVisitorStats();
-        }
-      } catch (e) {}
-    }
-
-    async function refreshAdminVisitorStats() {
-      const icon = document.getElementById('admRefreshVisitorIcon');
-      if (icon) icon.classList.add('fa-spin');
-      try {
-        const pin = state.verifiedAdminPin || state.localAdminPin;
-        const res = await callServer('adminGetVisitorStats', pin);
-        if (res && res.success && res.visitorStats) {
-          state.visitorStats = res.visitorStats;
-          renderAdminVisitorStats();
-          showToast('Status pengunjung diperbarui!', 'info');
-        }
-      } catch (e) {}
-      if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 400);
+      if (Array.isArray(res.kategoriList) && res.kategoriList.length > 0) {
+        state.kategoriList = res.kategoriList;
+      }
+      if (res.subKategoriMap && typeof res.subKategoriMap === 'object') {
+        state.subKategoriMap = remoteConnected
+          ? res.subKategoriMap
+          : { ...state.subKategoriMap, ...res.subKategoriMap };
+      }
+      if (res.pengaturanBayar && typeof res.pengaturanBayar === 'object') {
+        state.pengaturanBayar = { ...state.pengaturanBayar, ...res.pengaturanBayar };
+      }
     }
 
     async function initStoreData() {
@@ -1651,50 +1490,31 @@
         const remoteConnected = isRemoteServerConnected();
         const res = await callServer('getInitialData');
         if (res && res.success) {
-          if (typeof res.hideDummyProducts === 'boolean') {
-            state.hideDummyProducts = res.hideDummyProducts;
-          }
-          if (Array.isArray(res.lockedProductIds)) {
-            state.lockedProductIds = res.lockedProductIds;
-            if (remoteConnected) {
-              state.unlockedProductIds = [];
-            }
-          }
-          if (Array.isArray(res.produk) && res.produk.length > 0) {
-            if (remoteConnected) {
-              state.produk = res.produk
-                .map((p, i) => normalizeProduct(p, i))
-                .filter(Boolean)
-                .filter(p => !(state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)));
-            } else {
-              state.produk = mergeProductsPreservingCustom(res.produk, state.produk);
-            }
-          }
-          if (Array.isArray(res.ulasan)) {
-            if (remoteConnected || res.ulasan.length > 0) {
-              state.ulasan = res.ulasan.map((r, i) => normalizeReview(r, i)).filter(Boolean);
-            }
-          }
-          if (Array.isArray(res.supplier) && res.supplier.length > 0) {
-            state.supplier = res.supplier;
-          }
-          if (Array.isArray(res.kategoriList) && res.kategoriList.length > 0) {
-            state.kategoriList = res.kategoriList;
-          }
-          if (res.subKategoriMap && typeof res.subKategoriMap === 'object') {
-            state.subKategoriMap = remoteConnected
-              ? res.subKategoriMap
-              : { ...state.subKategoriMap, ...res.subKategoriMap };
-          }
-          if (res.pengaturanBayar && typeof res.pengaturanBayar === 'object') {
-            state.pengaturanBayar = { ...state.pengaturanBayar, ...res.pengaturanBayar };
-          }
+          applyServerDataToState(res, remoteConnected);
           saveLocalState();
           renderAllUI();
         }
       } catch (e) {
         console.warn('Menggunakan data lokal:', e);
       }
+    }
+
+    async function syncStoreDataSilent() {
+      try {
+        const remoteConnected = isRemoteServerConnected();
+        if (!remoteConnected) return;
+        const res = await callServer('getInitialData');
+        if (res && res.success) {
+          applyServerDataToState(res, true);
+          saveLocalState();
+          renderAllUI();
+          // Jika panel admin sedang terbuka dan tidak sedang mengetik di form inline, segarkan daftar
+          const adminPanel = document.getElementById('adminWorkspace');
+          if (adminPanel && !adminPanel.classList.contains('hidden') && !state.editingProductId) {
+            renderAdminProductList();
+          }
+        }
+      } catch (e) {}
     }
 
     function renderAllUI() {
@@ -2340,33 +2160,8 @@
       closeModal('adminPinModal');
 
       if (res && res.success) {
-        if (typeof res.hideDummyProducts === 'boolean') state.hideDummyProducts = res.hideDummyProducts;
-        if (Array.isArray(res.lockedProductIds)) {
-          state.lockedProductIds = res.lockedProductIds;
-          if (isRemoteServerConnected()) state.unlockedProductIds = [];
-        }
+        applyServerDataToState(res, isRemoteServerConnected());
         if (Array.isArray(res.orders) && res.orders.length > 0) state.localOrders = res.orders;
-        if (Array.isArray(res.produk) && res.produk.length > 0) {
-          if (isRemoteServerConnected()) {
-            state.produk = res.produk
-              .map((p, i) => normalizeProduct(p, i))
-              .filter(Boolean)
-              .filter(p => !(state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)));
-          } else {
-            state.produk = mergeProductsPreservingCustom(res.produk, state.produk);
-          }
-        }
-        if (Array.isArray(res.ulasan) && (isRemoteServerConnected() || res.ulasan.length > 0)) {
-          state.ulasan = res.ulasan.map((r, i) => normalizeReview(r, i)).filter(Boolean);
-        }
-        if (Array.isArray(res.supplier) && res.supplier.length > 0) state.supplier = res.supplier;
-        if (Array.isArray(res.kategoriList) && res.kategoriList.length > 0) state.kategoriList = res.kategoriList;
-        if (res.subKategoriMap) {
-          state.subKategoriMap = isRemoteServerConnected()
-            ? res.subKategoriMap
-            : { ...state.subKategoriMap, ...res.subKategoriMap };
-        }
-        if (res.pengaturanBayar) state.pengaturanBayar = { ...state.pengaturanBayar, ...res.pengaturanBayar };
         if (res.visitorStats) state.visitorStats = res.visitorStats;
       }
 
@@ -2574,72 +2369,264 @@
       }
 
       container.innerHTML = state.produk.map(p => {
-        const isLocked = Boolean(p.isLocked || state.lockedProductIds.includes(String(p.id)));
+        const pid = String(p.id).trim();
+        const isLocked = Boolean(p.isLocked || state.lockedProductIds.includes(pid));
+        const isEditingThis = String(state.editingProductId) === pid;
+        const subsForCat = state.subKategoriMap[p.kategori] || [];
+
         return `
-          <div class="bg-white p-3 rounded-xl border ${isLocked ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'} flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-3 min-w-0">
-              <img
-                src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
-                alt="${escapeHtmlAttr(p.nama)}"
-                onerror="this.src='https://placehold.co/80x80/ee4d2d/ffffff?text=Foto'"
-                class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
-              >
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="font-extrabold text-slate-800 truncate">${escapeHtmlAttr(p.nama)}</span>
-                  ${isLocked ? `<span class="bg-amber-200 text-amber-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Disembunyikan</span>` : ''}
+          <div id="admProdRowWrap_${escapeHtmlAttr(pid)}" class="bg-white rounded-xl border ${isEditingThis ? 'border-2 border-Hibualamo shadow-md' : isLocked ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'} overflow-hidden transition">
+            <div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-3 min-w-0">
+                <img
+                  src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
+                  alt="${escapeHtmlAttr(p.nama)}"
+                  onerror="this.src='https://placehold.co/80x80/ee4d2d/ffffff?text=Foto'"
+                  class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
+                >
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-extrabold text-slate-800 truncate">${escapeHtmlAttr(p.nama)}</span>
+                    ${isLocked ? `<span class="bg-amber-200 text-amber-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Disembunyikan dari UI</span>` : ''}
+                  </div>
+                  <div class="text-slate-500">
+                    ${escapeHtmlAttr(p.kategori)}${p.subKategori ? ' • ' + escapeHtmlAttr(p.subKategori) : ''} |
+                    Jual: <strong class="text-Hibualamo">${formatRupiah(p.hargaDiskon)}</strong> |
+                    Stok: <strong>${p.stok}</strong>
+                  </div>
                 </div>
-                <div class="text-slate-500">
-                  ${escapeHtmlAttr(p.kategori)}${p.subKategori ? ' • ' + escapeHtmlAttr(p.subKategori) : ''} |
-                  Jual: <strong class="text-Hibualamo">${formatRupiah(p.hargaDiskon)}</strong> |
-                  Stok: <strong>${p.stok}</strong>
-                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  data-admin-edit-prod="${escapeHtmlAttr(pid)}"
+                  class="${isEditingThis ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} font-bold px-3 py-1.5 rounded-lg cursor-pointer transition"
+                >
+                  <i class="fa-solid ${isEditingThis ? 'fa-chevron-up' : 'fa-pen-to-square'} mr-1"></i> ${isEditingThis ? 'Tutup Edit' : 'Edit'}
+                </button>
+                <button
+                  type="button"
+                  data-admin-lock-prod="${escapeHtmlAttr(pid)}"
+                  class="${isLocked ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'} font-bold px-3 py-1.5 rounded-lg cursor-pointer transition"
+                >
+                  <i class="fa-solid ${isLocked ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isLocked ? 'Tampilkan' : 'Sembunyikan'}
+                </button>
               </div>
             </div>
 
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                data-admin-edit-prod="${escapeHtmlAttr(p.id)}"
-                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg cursor-pointer"
-              >
-                <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
-              </button>
-              <button
-                type="button"
-                data-admin-lock-prod="${escapeHtmlAttr(p.id)}"
-                class="${isLocked ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-800'} font-bold px-3 py-1.5 rounded-lg cursor-pointer"
-              >
-                <i class="fa-solid ${isLocked ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isLocked ? 'Tampilkan' : 'Sembunyikan'}
-              </button>
-            </div>
+            ${isEditingThis ? `
+              <!-- FORM EDIT LANGSUNG DI BAWAH PRODUK -->
+              <div class="bg-orange-50/60 border-t border-orange-200 p-4 space-y-3 text-xs">
+                <div class="flex items-center justify-between border-b border-orange-200/80 pb-2">
+                  <h5 class="font-extrabold text-Hibualamo flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Produk: ${escapeHtmlAttr(p.nama)}
+                  </h5>
+                  <button type="button" data-admin-cancel-inline-prod="${escapeHtmlAttr(pid)}" class="text-red-600 font-bold hover:underline cursor-pointer">
+                    Batal
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div class="sm:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Nama Produk *</label>
+                    <input id="inlineProdNama_${escapeHtmlAttr(pid)}" type="text" value="${escapeHtmlAttr(p.nama)}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Supplier</label>
+                    <select id="inlineProdSupplier_${escapeHtmlAttr(pid)}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                      <option value="">-- Pilih Supplier --</option>
+                      ${state.supplier.map(s => `
+                        <option value="${escapeHtmlAttr(s.idSupplier)}" ${String(s.idSupplier) === String(p.idSupplier) ? 'selected' : ''}>
+                          ${escapeHtmlAttr(s.namaSupplier)}
+                        </option>
+                      `).join('')}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kategori Utama *</label>
+                    <select id="inlineProdKategori_${escapeHtmlAttr(pid)}" data-inline-cat-select="${escapeHtmlAttr(pid)}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                      ${state.kategoriList.map(k => `
+                        <option value="${escapeHtmlAttr(k)}" ${String(k) === String(p.kategori) ? 'selected' : ''}>
+                          ${escapeHtmlAttr(k)}
+                        </option>
+                      `).join('')}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Sub-Kategori</label>
+                    <select id="inlineProdSubKategori_${escapeHtmlAttr(pid)}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                      <option value="">-- Tanpa Sub Kategori --</option>
+                      ${subsForCat.map(sc => `
+                        <option value="${escapeHtmlAttr(sc)}" ${String(sc) === String(p.subKategori) ? 'selected' : ''}>
+                          ${escapeHtmlAttr(sc)}
+                        </option>
+                      `).join('')}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Stok Produk *</label>
+                    <input id="inlineProdStok_${escapeHtmlAttr(pid)}" type="number" value="${Number(p.stok) || 0}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Harga Modal Supplier (Rp)</label>
+                    <input id="inlineProdHargaSupplier_${escapeHtmlAttr(pid)}" type="number" value="${Number(p.hargaSupplier) || 0}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Harga Coret / Asli (Rp)</label>
+                    <input id="inlineProdHargaAsli_${escapeHtmlAttr(pid)}" type="number" value="${Number(p.hargaAsli) || Number(p.hargaDiskon) || 0}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Harga Jual Diskon (Rp) *</label>
+                    <input id="inlineProdHargaDiskon_${escapeHtmlAttr(pid)}" type="number" value="${Number(p.hargaDiskon) || 0}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Varian (Pisahkan dengan koma)</label>
+                    <input id="inlineProdVarian_${escapeHtmlAttr(pid)}" type="text" value="${escapeHtmlAttr((p.varian || []).join(', '))}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  </div>
+
+                  <div class="flex items-end pb-1">
+                    <label class="flex items-center gap-2 cursor-pointer select-none font-bold text-slate-700">
+                      <input id="inlineProdFlash_${escapeHtmlAttr(pid)}" type="checkbox" ${p.isFlashSale ? 'checked' : ''} class="w-4 h-4 accent-Hibualamo rounded">
+                      <span>Tampilkan di Produk Terlaris</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="space-y-2 pt-1">
+                  <label class="block font-bold text-slate-700">Foto Produk (URL / Upload / Kamera)</label>
+                  <div class="flex flex-wrap gap-2">
+                    <input id="inlineProdGambar_${escapeHtmlAttr(pid)}" type="text" value="${escapeHtmlAttr(p.gambar || '')}" class="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                    <label class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1.5">
+                      <i class="fa-solid fa-upload"></i> Upload File
+                      <input type="file" accept="image/*" data-inline-file-prod="${escapeHtmlAttr(pid)}" class="hidden">
+                    </label>
+                    <button type="button" data-inline-camera-prod="${escapeHtmlAttr(pid)}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1.5">
+                      <i class="fa-solid fa-camera"></i> Buka Kamera
+                    </button>
+                  </div>
+                  <div id="inlineImagePreviewWrap_${escapeHtmlAttr(pid)}" class="${p.gambar ? '' : 'hidden'} pt-1">
+                    <img id="inlineImagePreview_${escapeHtmlAttr(pid)}" src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}" alt="Preview" class="w-20 h-20 object-cover rounded-xl border border-slate-300 bg-white">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Deskripsi Produk</label>
+                  <textarea id="inlineProdDeskripsi_${escapeHtmlAttr(pid)}" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">${escapeHtmlAttr(p.deskripsi || '')}</textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    data-admin-cancel-inline-prod="${escapeHtmlAttr(pid)}"
+                    class="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    data-admin-save-inline-prod="${escapeHtmlAttr(pid)}"
+                    class="bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold px-5 py-2 rounded-xl shadow-sm cursor-pointer"
+                  >
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Perubahan Produk
+                  </button>
+                </div>
+              </div>
+            ` : ''}
           </div>
         `;
       }).join('');
     }
 
     function adminStartEditProduct(prodId) {
-      const p = state.produk.find(x => String(x.id) === String(prodId));
-      if (!p) return;
+      const cleanId = String(prodId || '').trim();
+      if (String(state.editingProductId) === cleanId) {
+        state.editingProductId = '';
+      } else {
+        state.editingProductId = cleanId;
+      }
+      renderAdminProductList();
+    }
 
-      document.getElementById('admProdId').value = p.id;
-      document.getElementById('admProdNama').value = p.nama;
-      document.getElementById('admProdKategori').value = p.kategori;
-      populateAdminSubCategoryOptions(p.kategori, p.subKategori);
-      document.getElementById('admProdSupplier').value = p.idSupplier || '';
-      document.getElementById('admProdHargaSupplier').value = p.hargaSupplier || 0;
-      document.getElementById('admProdHargaAsli').value = p.hargaAsli || p.hargaDiskon || 0;
-      document.getElementById('admProdHargaDiskon').value = p.hargaDiskon || 0;
-      document.getElementById('admProdStok').value = p.stok || 0;
-      document.getElementById('admProdVarian').value = (p.varian || []).join(', ');
-      document.getElementById('admProdGambar').value = p.gambar || '';
-      document.getElementById('admProdDeskripsi').value = p.deskripsi || '';
-      document.getElementById('admProdFlash').checked = Boolean(p.isFlashSale);
+    async function adminSaveInlineProduct(prodId) {
+      const cleanId = String(prodId || '').trim();
+      const existingProd = state.produk.find(x => String(x.id) === cleanId);
+      if (!existingProd) return;
 
-      const title = document.getElementById('formProductTitle');
-      if (title) title.textContent = `Edit Produk: ${p.nama}`;
-      document.getElementById('btnCancelEditProduct')?.classList.remove('hidden');
-      document.getElementById('adminAddProductPanel')?.scrollIntoView({ behavior: 'smooth' });
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const nama = document.getElementById(`inlineProdNama_${cleanId}`)?.value.trim() || '';
+      const kategori = document.getElementById(`inlineProdKategori_${cleanId}`)?.value || existingProd.kategori || 'Elektronik';
+      const subKategori = document.getElementById(`inlineProdSubKategori_${cleanId}`)?.value || '';
+      const idSupplier = document.getElementById(`inlineProdSupplier_${cleanId}`)?.value || '';
+      const supObj = state.supplier.find(s => String(s.idSupplier) === String(idSupplier));
+      const namaSupplier = supObj ? supObj.namaSupplier : '-';
+
+      const hargaSupplier = Number(document.getElementById(`inlineProdHargaSupplier_${cleanId}`)?.value) || 0;
+      const hargaDiskon = Number(document.getElementById(`inlineProdHargaDiskon_${cleanId}`)?.value) || 0;
+      const hargaAsli = Number(document.getElementById(`inlineProdHargaAsli_${cleanId}`)?.value) || hargaDiskon;
+      const stok = Number(document.getElementById(`inlineProdStok_${cleanId}`)?.value) || 0;
+      const varianRaw = document.getElementById(`inlineProdVarian_${cleanId}`)?.value.trim() || 'Standar';
+      const gambar = document.getElementById(`inlineProdGambar_${cleanId}`)?.value.trim() || existingProd.gambar || 'https://placehold.co/400x400/ee4d2d/ffffff?text=Produk';
+      const deskripsi = document.getElementById(`inlineProdDeskripsi_${cleanId}`)?.value.trim() || '';
+      const isFlashSale = Boolean(document.getElementById(`inlineProdFlash_${cleanId}`)?.checked);
+
+      if (!nama || hargaDiskon <= 0) {
+        showToast('Nama produk dan Harga Jual wajib diisi!', 'error');
+        return;
+      }
+
+      const isCurrentlyLocked = Boolean(existingProd.isLocked || state.lockedProductIds.includes(cleanId));
+
+      const payloadProd = {
+        id: cleanId,
+        nama,
+        kategori,
+        subKategori,
+        hargaSupplier,
+        hargaAsli,
+        hargaDiskon,
+        stok,
+        varian: varianRaw.split(',').map(v => v.trim()).filter(Boolean),
+        gambar,
+        deskripsi,
+        isFlashSale,
+        idSupplier,
+        namaSupplier,
+        isLocked: isCurrentlyLocked
+      };
+
+      const res = await callServer('adminSaveProduct', pin, payloadProd);
+      if (res && Array.isArray(res.lockedProductIds)) {
+        state.lockedProductIds = res.lockedProductIds;
+      }
+
+      const updatedProdObj = normalizeProduct({
+        ...payloadProd,
+        id: cleanId,
+        terjual: existingProd.terjual || 0,
+        rating: existingProd.rating || 5.0,
+        badge: existingProd.badge || 'Star+'
+      });
+
+      if (updatedProdObj) {
+        const idx = state.produk.findIndex(x => String(x.id) === cleanId);
+        if (idx !== -1) state.produk[idx] = updatedProdObj;
+      }
+
+      state.editingProductId = '';
+      saveLocalState();
+      renderAllUI();
+      renderAdminProductList();
+      populateAdminSelects();
+      showToast(`Perubahan pada "${nama}" berhasil disimpan!`, 'success');
     }
 
     async function adminSaveProduct() {
@@ -2718,21 +2705,35 @@
       const p = state.produk.find(x => String(x.id) === String(prodId));
       if (!p) return;
       const pin = state.verifiedAdminPin || state.localAdminPin;
-      const newLockState = !Boolean(p.isLocked || state.lockedProductIds.includes(String(p.id)));
+      const cleanId = String(p.id).trim();
+      const newLockState = !Boolean(p.isLocked || state.lockedProductIds.includes(cleanId));
       p.isLocked = newLockState;
 
       if (newLockState) {
-        if (!state.lockedProductIds.includes(p.id)) state.lockedProductIds.push(p.id);
+        if (!state.lockedProductIds.includes(cleanId)) state.lockedProductIds.push(cleanId);
+        state.unlockedProductIds = state.unlockedProductIds.filter(id => id !== cleanId);
+        // Jika produk yang disembunyikan sedang dibuka di modal detail atau ada di keranjang, bersihkan
+        if (state.activeDetailProduct && String(state.activeDetailProduct.id) === cleanId) {
+          closeModal('productDetailModal');
+          state.activeDetailProduct = null;
+        }
+        state.cart = state.cart.filter(item => String(item.id) !== cleanId);
       } else {
-        state.lockedProductIds = state.lockedProductIds.filter(id => id !== p.id);
-        if (!state.unlockedProductIds.includes(p.id)) state.unlockedProductIds.push(p.id);
+        state.lockedProductIds = state.lockedProductIds.filter(id => id !== cleanId);
       }
 
-      await callServer('adminToggleProductLock', pin, p.id, newLockState);
       saveLocalState();
       renderAllUI();
       renderAdminProductList();
-      showToast(newLockState ? 'Produk disembunyikan dari katalog web.' : 'Produk ditampilkan kembali di katalog web.', 'info');
+
+      const res = await callServer('adminToggleProductLock', pin, cleanId, newLockState);
+      if (res && Array.isArray(res.lockedProductIds)) {
+        state.lockedProductIds = res.lockedProductIds.map(id => String(id).trim()).filter(Boolean);
+        saveLocalState();
+        renderAllUI();
+        renderAdminProductList();
+      }
+      showToast(newLockState ? 'Produk disembunyikan dari tampilan UI & disinkronkan!' : 'Produk ditampilkan kembali di katalog UI!', 'info');
     }
 
     // KELOLA ULASAN DI ADMIN
@@ -2961,24 +2962,36 @@
       if (waEl) waEl.value = p.noWaAdmin || '';
       const gmailEl = document.getElementById('admPayGmail');
       if (gmailEl) gmailEl.value = p.gmailPemilik || '';
+      const geminiKeyEl = document.getElementById('admPayGeminiKey');
+      if (geminiKeyEl) geminiKeyEl.value = p.geminiApiKey || '';
+      const geminiAutoEl = document.getElementById('admPayGeminiAuto');
+      if (geminiAutoEl) geminiAutoEl.checked = p.geminiAutoEnhance !== false;
+      const geminiPromptEl = document.getElementById('admPayGeminiPrompt');
+      if (geminiPromptEl) {
+        geminiPromptEl.value = p.geminiPrompt || 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.';
+      }
     }
 
     async function adminSavePaymentSettings() {
       const pin = state.verifiedAdminPin || state.localAdminPin;
+      const defaultPrompt = 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.';
       const newSettings = {
         logoUrl: document.getElementById('admPayLogoUrl')?.value.trim() || '',
         qrisUrl: document.getElementById('admPayQrisUrl')?.value.trim() || '',
         noRekening: document.getElementById('admPayNoRek')?.value.trim() || '',
         namaPemilikRekening: document.getElementById('admPayNamaRek')?.value.trim() || '',
         noWaAdmin: document.getElementById('admPayWaAdmin')?.value.trim() || '',
-        gmailPemilik: document.getElementById('admPayGmail')?.value.trim() || ''
+        gmailPemilik: document.getElementById('admPayGmail')?.value.trim() || '',
+        geminiApiKey: document.getElementById('admPayGeminiKey')?.value.trim() || '',
+        geminiAutoEnhance: Boolean(document.getElementById('admPayGeminiAuto')?.checked),
+        geminiPrompt: document.getElementById('admPayGeminiPrompt')?.value.trim() || defaultPrompt
       };
 
       await callServer('adminSavePaymentSettings', pin, newSettings);
       state.pengaturanBayar = { ...state.pengaturanBayar, ...newSettings };
       saveLocalState();
       renderHeaderLogo();
-      showToast('Pengaturan toko & pembayaran berhasil disimpan!', 'success');
+      showToast('Pengaturan toko, pembayaran & Gemini AI berhasil disimpan!', 'success');
     }
 
     async function adminSyncGasUrl() {
@@ -3034,7 +3047,8 @@
     }
 
     // KAMERA & UPLOAD FOTO PRODUK
-    async function openAdminCamera() {
+    async function openAdminCamera(targetProdId = '') {
+      state.cameraTargetProductId = String(targetProdId || '').trim();
       try {
         if (activeCameraStream) {
           activeCameraStream.getTracks().forEach(t => t.stop());
@@ -3063,29 +3077,125 @@
       const videoEl = document.getElementById('cameraVideoEl');
       if (!videoEl) return;
       const canvas = document.createElement('canvas');
-      canvas.width = 600;
-      canvas.height = 600;
+      canvas.width = 800;
+      canvas.height = 800;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-      const base64Data = canvas.toDataURL('image/jpeg', 0.82);
+      const base64Data = canvas.toDataURL('image/jpeg', 0.88);
+      const targetProdId = state.cameraTargetProductId;
       closeAdminCamera();
-      await processUploadedImageBase64(base64Data, 'camera_' + Date.now() + '.jpg');
+      await processUploadedImageBase64(base64Data, 'camera_' + Date.now() + '.jpg', targetProdId);
     }
 
-    async function processUploadedImageBase64(base64Data, fileName) {
-      const inputEl = document.getElementById('admProdGambar');
-      const previewWrap = document.getElementById('admImagePreviewWrap');
-      const previewImg = document.getElementById('admImagePreview');
+    async function generateGeminiProductPhotoClient(base64DataUrl) {
+      const autoEnhance = state.pengaturanBayar?.geminiAutoEnhance !== false;
+      const apiKey = String(state.pengaturanBayar?.geminiApiKey || '').trim();
+      const defaultPrompt = 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.';
+      const activePrompt = String(state.pengaturanBayar?.geminiPrompt || defaultPrompt).trim();
 
-      if (inputEl) inputEl.value = base64Data;
-      if (previewImg) previewImg.src = base64Data;
+      if (!autoEnhance || !apiKey) {
+        return { enhanced: false, dataUrl: base64DataUrl };
+      }
+
+      const splitParts = String(base64DataUrl || '').split(',');
+      const rawBase64 = splitParts.length > 1 ? splitParts[1] : splitParts[0];
+      const mimeMatch = String(splitParts[0] || '').match(/data:(.*?);base64/);
+      const mimeType = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : 'image/jpeg';
+
+      const fullInstruction =
+        `Transform this product photo into: ${activePrompt} ` +
+        `Keep the main product authentic, intact, well-proportioned, and centered.`;
+
+      const models = ['gemini-2.5-flash-image', 'gemini-2.0-flash-exp-image-generation'];
+
+      for (const modelName of models) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+          const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: fullInstruction },
+                  { inline_data: { mime_type: mimeType, data: rawBase64 } }
+                ]
+              }],
+              generationConfig: {
+                responseModalities: ['TEXT', 'IMAGE']
+              }
+            })
+          });
+
+          if (resp.ok) {
+            const json = await resp.json();
+            const candidates = json.candidates || [];
+            for (const cand of candidates) {
+              const parts = cand?.content?.parts || [];
+              for (const part of parts) {
+                const inline = part.inlineData || part.inline_data;
+                if (inline && inline.data) {
+                  const outMime = inline.mimeType || inline.mime_type || 'image/png';
+                  return {
+                    enhanced: true,
+                    dataUrl: `data:${outMime};base64,${inline.data}`,
+                    mimeType: outMime
+                  };
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Gemini client flow fallback:', err);
+        }
+      }
+
+      return { enhanced: false, dataUrl: base64DataUrl };
+    }
+
+    async function processUploadedImageBase64(base64Data, fileName, targetProdId = '') {
+      const cleanTarget = String(targetProdId || '').trim();
+      const inputEl = cleanTarget
+        ? document.getElementById(`inlineProdGambar_${cleanTarget}`)
+        : document.getElementById('admProdGambar');
+      const previewWrap = cleanTarget
+        ? document.getElementById(`inlineImagePreviewWrap_${cleanTarget}`)
+        : document.getElementById('admImagePreviewWrap');
+      const previewImg = cleanTarget
+        ? document.getElementById(`inlineImagePreview_${cleanTarget}`)
+        : document.getElementById('admImagePreview');
+
+      let workingBase64 = base64Data;
+      let workingMime = 'image/jpeg';
+      let clientEnhanced = false;
+
+      if (inputEl) inputEl.value = workingBase64;
+      if (previewImg) previewImg.src = workingBase64;
       if (previewWrap) previewWrap.classList.remove('hidden');
 
+      const autoEnhance = state.pengaturanBayar?.geminiAutoEnhance !== false;
+      if (autoEnhance) {
+        showToast('Memproses foto dengan Gemini AI Studio Flow...', 'info');
+        const aiResult = await generateGeminiProductPhotoClient(workingBase64);
+        if (aiResult && aiResult.enhanced && aiResult.dataUrl) {
+          workingBase64 = aiResult.dataUrl;
+          workingMime = aiResult.mimeType || 'image/png';
+          clientEnhanced = true;
+          if (inputEl) inputEl.value = workingBase64;
+          if (previewImg) previewImg.src = workingBase64;
+        }
+      }
+
       const pin = state.verifiedAdminPin || state.localAdminPin;
-      const res = await callServer('adminUploadImageToDrive', pin, base64Data, fileName, 'image/jpeg');
+      const res = await callServer('adminUploadImageToDrive', pin, workingBase64, fileName, workingMime, clientEnhanced);
       if (res && res.success && res.url) {
         if (inputEl) inputEl.value = res.url;
-        showToast('Foto produk siap digunakan!', 'success');
+        if (previewImg) previewImg.src = convertDriveUrl(res.url);
+        if (clientEnhanced || res.aiEnhanced) {
+          showToast('Foto produk berhasil digenerate Gemini AI Studio Flow!', 'success');
+        } else {
+          showToast('Foto produk siap digunakan! (Isi Gemini API Key di Pengaturan untuk fitur AI Studio)', 'info');
+        }
       }
     }
 
@@ -3128,9 +3238,24 @@
       initVisitorTracking();
       renderLiveChat();
 
+      // Sinkronisasi real-time otomatis untuk browser/tab lain setiap 8 detik
+      setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          syncStoreDataSilent();
+        }
+      }, 8000);
+
+      // Sinkronisasi instan antar-tab di browser yang sama
+      window.addEventListener('storage', (ev) => {
+        if (ev.key && ev.key.startsWith('HibualamoStore_')) {
+          loadLocalState();
+          renderAllUI();
+        }
+      });
+
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && isRemoteServerConnected()) {
-          initStoreData();
+          syncStoreDataSilent();
         }
       });
 
@@ -3163,9 +3288,35 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-          processUploadedImageBase64(ev.target.result, file.name);
+          processUploadedImageBase64(ev.target.result, file.name, '');
         };
         reader.readAsDataURL(file);
+      });
+
+      document.body.addEventListener('change', (e) => {
+        const inlineCatSelect = e.target.closest('[data-inline-cat-select]');
+        if (inlineCatSelect) {
+          const pid = inlineCatSelect.getAttribute('data-inline-cat-select');
+          const subSelect = document.getElementById(`inlineProdSubKategori_${pid}`);
+          if (subSelect) {
+            const subs = state.subKategoriMap[inlineCatSelect.value] || [];
+            subSelect.innerHTML = `<option value="">-- Tanpa Sub Kategori --</option>` +
+              subs.map(sc => `<option value="${escapeHtmlAttr(sc)}">${escapeHtmlAttr(sc)}</option>`).join('');
+          }
+          return;
+        }
+
+        const inlineFileInput = e.target.closest('[data-inline-file-prod]');
+        if (inlineFileInput) {
+          const pid = inlineFileInput.getAttribute('data-inline-file-prod');
+          const file = inlineFileInput.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            processUploadedImageBase64(ev.target.result, file.name, pid);
+          };
+          reader.readAsDataURL(file);
+        }
       });
 
       document.getElementById('adminPinInput')?.addEventListener('keydown', (e) => {
@@ -3261,6 +3412,25 @@
         const editProdBtn = e.target.closest('[data-admin-edit-prod]');
         if (editProdBtn) {
           adminStartEditProduct(editProdBtn.getAttribute('data-admin-edit-prod'));
+          return;
+        }
+
+        const saveInlineProdBtn = e.target.closest('[data-admin-save-inline-prod]');
+        if (saveInlineProdBtn) {
+          adminSaveInlineProduct(saveInlineProdBtn.getAttribute('data-admin-save-inline-prod'));
+          return;
+        }
+
+        const cancelInlineProdBtn = e.target.closest('[data-admin-cancel-inline-prod]');
+        if (cancelInlineProdBtn) {
+          state.editingProductId = '';
+          renderAdminProductList();
+          return;
+        }
+
+        const inlineCamBtn = e.target.closest('[data-inline-camera-prod]');
+        if (inlineCamBtn) {
+          openAdminCamera(inlineCamBtn.getAttribute('data-inline-camera-prod'));
           return;
         }
 
@@ -3393,14 +3563,14 @@
             adminChangePin();
             break;
           case 'admin-open-camera':
-            openAdminCamera();
+            openAdminCamera('');
             break;
           case 'admin-close-camera':
             closeAdminCamera();
             break;
           case 'admin-switch-camera':
             currentCameraFacingMode = currentCameraFacingMode === 'environment' ? 'user' : 'environment';
-            openAdminCamera();
+            openAdminCamera(state.cameraTargetProductId);
             break;
           case 'admin-capture-photo':
             captureAdminPhoto();
