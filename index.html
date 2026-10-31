@@ -1,0 +1,3419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hibualamo Store - Belanja Mudah & Terpercaya</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          },
+          colors: {
+            Hibualamo: '#ee4d2d',
+            HibualamoDark: '#d73211'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes pulseBadge {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    .flash-badge {
+      animation: pulseBadge 1.8s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP BAR -->
+  <div class="bg-HibualamoDark text-white text-[11px] py-1.5 px-3 sm:px-6">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-shield-halved text-yellow-300"></i>
+        <span>Selamat Datang di Official <strong>Hibualamo Store</strong> — Jaminan Produk Original & Pengiriman Cepat</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-4">
+        <button type="button" data-action="open-track-modal" class="hover:underline flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-truck-fast"></i> Lacak Pesanan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER UTAMA -->
+  <header class="bg-Hibualamo text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-6xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <!-- LOGO (KLIK 10X UNTUK ADMIN PANEL) -->
+      <div
+        id="secretLogoTrigger"
+        data-action="logo-secret-admin"
+        title="Hibualamo Store"
+        class="flex items-center gap-2.5 cursor-pointer select-none shrink-0 group"
+      >
+        <div class="w-10 h-10 rounded-xl bg-white text-Hibualamo flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+          <img id="headerLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer">
+          <i id="headerLogoDefaultIcon" class="fa-solid fa-bag-shopping text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight leading-none">Hibualamo Store</h1>
+          <p class="text-[10px] text-orange-100 font-medium mt-0.5">Belanja Hemat Setiap Hari</p>
+        </div>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="flex-1 max-w-xl">
+        <div class="relative">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Cari produk di Hibualamo Store..."
+            class="w-full pl-3.5 pr-9 py-2 rounded-xl bg-white text-slate-800 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 shadow-inner"
+          >
+          <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-Hibualamo text-sm"></i>
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          data-action="open-track-modal"
+          class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+          title="Lacak Pesanan"
+        >
+          <i class="fa-solid fa-box-open text-sm"></i>
+          <span class="hidden md:inline">Lacak Pesanan</span>
+        </button>
+
+        <button
+          type="button"
+          data-action="open-cart-modal"
+          class="relative bg-white text-Hibualamo hover:bg-orange-50 px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+        >
+          <i class="fa-solid fa-cart-shopping text-sm"></i>
+          <span class="hidden sm:inline">Keranjang</span>
+          <span
+            id="cartBadge"
+            class="bg-slate-900 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
+          >0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KONTEN UTAMA -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 space-y-5">
+
+    <!-- PANEL ADMIN WORKSPACE (MUNCUL SAAT LOGIN PIN BERHASIL) -->
+    <section id="adminWorkspace" class="hidden bg-white rounded-2xl border-2 border-Hibualamo shadow-xl overflow-hidden">
+      <div class="bg-slate-900 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-Hibualamo flex items-center justify-center text-white font-bold">
+            <i class="fa-solid fa-user-shield"></i>
+          </span>
+          <div>
+            <h2 class="text-sm font-extrabold">Panel Admin Hibualamo Store</h2>
+            <p class="text-[11px] text-slate-400">Kelola Pesanan, Produk, Kategori, Supplier & Pengaturan</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <div class="bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-slate-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-slate-300">Online: <strong id="admLiveVisitorCount" class="text-white">1</strong></span>
+            <span class="text-slate-500">|</span>
+            <span class="text-slate-300">Hari Ini: <strong id="admTodayVisitorCount" class="text-amber-400">1</strong></span>
+            <button type="button" data-action="admin-refresh-visitor" class="text-slate-400 hover:text-white ml-1 cursor-pointer" title="Segarkan Statistik">
+              <i id="admRefreshVisitorIcon" class="fa-solid fa-rotate"></i>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            data-action="close-admin-workspace"
+            class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer transition"
+          >
+            <i class="fa-solid fa-xmark mr-1"></i> Tutup Panel
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB NAVIGASI ADMIN -->
+      <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <button id="tabAdminOrders" type="button" data-admin-tab="orders" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-Hibualamo text-white cursor-pointer shrink-0">
+          <i class="fa-solid fa-receipt mr-1"></i> Pesanan Masuk
+        </button>
+        <button id="tabAdminAddProduct" type="button" data-admin-tab="addProduct" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-boxes-stacked mr-1"></i> Produk & Harga
+        </button>
+        <button id="tabAdminCategories" type="button" data-admin-tab="categories" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-layer-group mr-1"></i> Kategori & Sub
+        </button>
+        <button id="tabAdminReviews" type="button" data-admin-tab="reviews" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-star mr-1"></i> Ulasan (<span id="adminReviewTotalCount">0</span>)
+        </button>
+        <button id="tabAdminSuppliers" type="button" data-admin-tab="suppliers" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-truck-field mr-1"></i> Supplier
+        </button>
+        <button id="tabAdminPayment" type="button" data-admin-tab="payment" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-gear mr-1"></i> Pengaturan Toko & API
+        </button>
+        <button id="tabAdminPassword" type="button" data-admin-tab="password" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-key mr-1"></i> Ubah PIN
+        </button>
+      </div>
+
+      <div class="p-4">
+        <!-- 1. PANEL PESANAN MASUK -->
+        <div id="adminOrdersPanel" class="space-y-3"></div>
+
+        <!-- 2. PANEL PRODUK & HARGA -->
+        <div id="adminAddProductPanel" class="hidden space-y-5">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+              <h3 id="formProductTitle" class="text-xs sm:text-sm font-extrabold text-slate-800">Tambah Produk Baru ke Database</h3>
+              <button id="btnCancelEditProduct" type="button" data-action="admin-cancel-edit-product" class="hidden text-xs text-red-600 font-bold hover:underline cursor-pointer">
+                Batal Edit
+              </button>
+            </div>
+
+            <input id="admProdId" type="hidden" value="">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              <div class="sm:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1">Nama Produk *</label>
+                <input id="admProdNama" type="text" placeholder="Contoh: TWS Earbuds Bluetooth 5.3" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Supplier</label>
+                <select id="admProdSupplier" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"></select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Kategori Utama *</label>
+                <select id="admProdKategori" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"></select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Sub-Kategori</label>
+                <select id="admProdSubKategori" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                  <option value="">-- Tanpa Sub Kategori --</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Stok Produk *</label>
+                <input id="admProdStok" type="number" value="50" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Harga Modal Supplier (Rp)</label>
+                <input id="admProdHargaSupplier" type="number" placeholder="65000" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Harga Coret / Asli (Rp)</label>
+                <input id="admProdHargaAsli" type="number" placeholder="250000" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Harga Jual Diskon (Rp) *</label>
+                <input id="admProdHargaDiskon" type="number" placeholder="99000" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block font-bold text-slate-700 mb-1">Varian (Pisahkan dengan koma)</label>
+                <input id="admProdVarian" type="text" placeholder="Hitam, Putih, Ukuran L" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+
+              <div class="flex items-end pb-1">
+                <label class="flex items-center gap-2 cursor-pointer select-none font-bold text-slate-700">
+                  <input id="admProdFlash" type="checkbox" class="w-4 h-4 accent-Hibualamo rounded">
+                  <span>Tampilkan di Produk Terlaris</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- UPLOAD GAMBAR / KAMERA -->
+            <div class="space-y-2 pt-1 text-xs">
+              <label class="block font-bold text-slate-700">Foto Produk (URL / Upload / Kamera)</label>
+              <div class="flex flex-wrap gap-2">
+                <input id="admProdGambar" type="text" placeholder="Tempel URL gambar atau gunakan tombol Upload / Kamera..." class="flex-1 min-w-[220px] px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                <label class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1.5">
+                  <i class="fa-solid fa-upload"></i> Upload File
+                  <input id="admProdFileInput" type="file" accept="image/*" class="hidden">
+                </label>
+                <button type="button" data-action="admin-open-camera" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg cursor-pointer flex items-center gap-1.5">
+                  <i class="fa-solid fa-camera"></i> Buka Kamera
+                </button>
+              </div>
+
+              <div id="admImagePreviewWrap" class="hidden pt-2">
+                <img id="admImagePreview" src="" alt="Preview" class="w-24 h-24 object-cover rounded-xl border border-slate-300">
+              </div>
+            </div>
+
+            <div class="text-xs">
+              <label class="block font-bold text-slate-700 mb-1">Deskripsi Produk</label>
+              <textarea id="admProdDeskripsi" rows="3" placeholder="Tulis spesifikasi dan keunggulan produk..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"></textarea>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <button type="button" data-action="admin-save-product" class="bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold px-5 py-2.5 rounded-xl text-xs cursor-pointer shadow-sm">
+                <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Produk ke Database
+              </button>
+
+              <button type="button" data-action="admin-clear-dummy" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-2 rounded-xl text-xs cursor-pointer">
+                <i class="fa-solid fa-broom mr-1"></i> Bersihkan Produk Contoh (Dummy)
+              </button>
+            </div>
+          </div>
+
+          <!-- DAFTAR PRODUK DI ADMIN -->
+          <div class="space-y-2">
+            <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Daftar Katalog Produk (<span id="adminProductCount">0</span>)</h4>
+            <div id="adminProductListContainer" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- 3. PANEL KATEGORI & SUB-KATEGORI -->
+        <div id="adminCategoriesPanel" class="hidden space-y-4 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <h3 class="font-extrabold text-slate-800 text-sm">Kelola Kategori Utama</h3>
+              <div class="flex gap-2">
+                <input id="admNewCategoryName" type="text" placeholder="Nama kategori baru..." class="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                <button type="button" data-action="admin-add-category" class="bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+                  + Tambah
+                </button>
+              </div>
+              <div id="adminCategoryListContainer" class="space-y-1.5"></div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <h3 class="font-extrabold text-slate-800 text-sm">Kelola Sub-Kategori</h3>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Pilih Kategori Induk</label>
+                <select id="admSubParentCat" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"></select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Daftar Sub-Kategori (Pisahkan dengan koma)</label>
+                <input id="admSubCatInput" type="text" placeholder="Contoh: Audio, Kabel, Smartwatch" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <button type="button" data-action="admin-save-subcategories" class="bg-slate-900 hover:bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+                Simpan Sub-Kategori
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. PANEL ULASAN -->
+        <div id="adminReviewsPanel" class="hidden space-y-4 text-xs">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-extrabold text-slate-800 text-sm">Tambah / Edit Ulasan Pembeli</h3>
+              <button id="btnCancelEditReview" type="button" data-action="admin-reset-review" class="hidden text-red-600 font-bold hover:underline cursor-pointer">Batal</button>
+            </div>
+            <input id="admRevId" type="hidden" value="">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Pilih Produk</label>
+                <select id="admRevProduk" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"></select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Pembeli</label>
+                <input id="admRevNama" type="text" placeholder="Andi P***" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Rating</label>
+                <select id="admRevRating" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-bold text-amber-500">
+                  <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                  <option value="4">⭐⭐⭐⭐ (4)</option>
+                  <option value="3">⭐⭐⭐ (3)</option>
+                  <option value="2">⭐⭐ (2)</option>
+                  <option value="1">⭐ (1)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Variasi</label>
+                <input id="admRevVarian" type="text" placeholder="Hitam / Ukuran L" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Komentar Ulasan</label>
+              <input id="admRevKomentar" type="text" placeholder="Barang bagus, pengiriman sangat cepat!" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+            </div>
+            <button type="button" data-action="admin-save-review" class="bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+              Simpan Ulasan
+            </button>
+          </div>
+
+          <div id="adminReviewListContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 5. PANEL SUPPLIER -->
+        <div id="adminSuppliersPanel" class="hidden space-y-4 text-xs">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <h3 class="font-extrabold text-slate-800 text-sm">Tambah / Kelola Data Supplier</h3>
+            <input id="admSupId" type="hidden" value="">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Supplier *</label>
+                <input id="admSupNama" type="text" placeholder="PT Sumber Elektronik" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Jenis Supplier</label>
+                <input id="admSupJenis" type="text" placeholder="Distributor / Produsen" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Alamat</label>
+                <input id="admSupAlamat" type="text" placeholder="Jl. Mangga Dua No. 18" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Kontak Person / WA</label>
+                <input id="admSupKontak" type="text" placeholder="Bpk. Hendra (0812...)" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+            </div>
+            <button type="button" data-action="admin-save-supplier" class="bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+              Simpan Supplier
+            </button>
+          </div>
+          <div id="adminSupplierListContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 6. PANEL PENGATURAN TOKO & KONEKSI GAS -->
+        <div id="adminPaymentPanel" class="hidden space-y-4 text-xs">
+          <div class="bg-orange-50/70 p-4 rounded-xl border border-orange-200 space-y-2">
+            <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-database text-Hibualamo"></i> Sinkronisasi Database Google Apps Script (`kode.gs`)
+            </h3>
+            <p class="text-[11px] text-slate-600">Masukkan URL Web App Google Apps Script Anda (`https://script.google.com/macros/s/.../exec`) agar produk, pesanan, dan pengaturan tersimpan langsung ke Google Sheets.</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input id="admGasApiUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              <button type="button" data-action="admin-sync-gas-url" class="bg-slate-900 hover:bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer shrink-0">
+                Simpan & Sinkronkan Sekarang
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <h3 class="font-extrabold text-slate-800 text-sm">Pengaturan Pembayaran, Logo & Kontak Toko</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">URL Logo Toko</label>
+                <input id="admPayLogoUrl" type="text" placeholder="https://..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">URL Gambar QRIS</label>
+                <input id="admPayQrisUrl" type="text" placeholder="https://..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Bank & Nomor Rekening</label>
+                <input id="admPayNoRek" type="text" placeholder="Bank Mandiri - 1860000119434" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Pemilik Rekening</label>
+                <input id="admPayNamaRek" type="text" placeholder="Andri Illa" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp Admin</label>
+                <input id="admPayWaAdmin" type="text" placeholder="08215075520" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Gmail Pemilik (Notifikasi Order)</label>
+                <input id="admPayGmail" type="email" placeholder="nama@gmail.com" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+            </div>
+            <button type="button" data-action="admin-save-payment" class="bg-Hibualamo text-white font-bold px-5 py-2.5 rounded-xl cursor-pointer">
+              Simpan Pengaturan Toko
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. PANEL UBAH PIN ADMIN -->
+        <div id="adminPasswordPanel" class="hidden max-w-md space-y-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <h3 class="font-extrabold text-slate-800 text-sm">Ganti Password / PIN Admin</h3>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">PIN Admin Lama</label>
+            <input id="admOldPin" type="password" placeholder="Masukkan PIN lama..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">PIN Admin Baru</label>
+            <input id="admNewPin" type="password" placeholder="Masukkan PIN baru..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+          </div>
+          <button type="button" data-action="admin-change-pin" class="bg-slate-900 hover:bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+            Simpan PIN Baru
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BANNER PROMO -->
+    <section class="bg-gradient-to-r from-Hibualamo to-orange-500 rounded-2xl p-4 sm:p-6 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="space-y-1.5 max-w-xl">
+        <span class="inline-block bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+          Promo Spesial Hari Ini
+        </span>
+        <h2 class="text-lg sm:text-2xl font-extrabold leading-tight">Belanja Kebutuhan Harian & Elektronik Lebih Hemat!</h2>
+        <p class="text-xs sm:text-sm text-orange-100">Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.</p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
+          <div class="text-[10px] text-orange-100">Total Produk</div>
+          <div id="heroProductCount" class="text-base font-extrabold">8+</div>
+        </div>
+        <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
+          <div class="text-[10px] text-orange-100">Rating Toko</div>
+          <div class="text-base font-extrabold text-yellow-300"><i class="fa-solid fa-star text-xs"></i> 4.9</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLASH SALE / PRODUK TERLARIS -->
+    <section id="flashSaleSection" class="bg-white rounded-2xl p-3.5 sm:p-4 border border-orange-200/80 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="bg-Hibualamo text-white text-xs font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1">
+            <i class="fa-solid fa-bolt text-yellow-300"></i> PRODUK TERLARIS
+          </span>
+          <span class="text-xs text-slate-500 hidden sm:inline">Paling banyak dibeli minggu ini</span>
+        </div>
+      </div>
+      <div id="flashSaleGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3"></div>
+    </section>
+
+    <!-- FILTER KATEGORI & URUTAN -->
+    <section class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-sm space-y-2.5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div id="categoryContainer" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0"></div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <label for="sortSelect" class="text-[11px] font-semibold text-slate-500">Urutkan:</label>
+          <select id="sortSelect" class="text-xs font-bold bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none">
+            <option value="populer">Paling Laris</option>
+            <option value="termurah">Harga Terendah</option>
+            <option value="termahal">Harga Tertinggi</option>
+            <option value="terbaru">Terbaru</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SUB-KATEGORI BAR -->
+      <div id="subCategoryContainer" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-slate-100"></div>
+    </section>
+
+    <!-- KATALOG PRODUK UTAMA -->
+    <section class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm sm:text-base font-extrabold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-store text-Hibualamo"></i>
+          <span id="catalogTitleText">Semua Produk</span>
+        </h2>
+        <span id="catalogCountText" class="text-xs font-semibold text-slate-500">0 produk</span>
+      </div>
+
+      <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5"></div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 mt-10 py-6 px-3 sm:px-6 text-xs text-slate-500">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div>
+        <strong class="text-slate-800">Hibualamo Store</strong> &copy; 2025 — Belanja Aman, Cepat & Terpercaya.
+      </div>
+      <div class="flex items-center gap-4">
+        <button type="button" data-action="open-track-modal" class="hover:text-Hibualamo cursor-pointer">Lacak Pesanan</button>
+        <button type="button" data-action="toggle-live-chat" class="hover:text-Hibualamo cursor-pointer">Bantuan CS</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL DETAIL PRODUK -->
+  <div id="productDetailModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <h3 id="detailModalTitle" class="text-sm font-extrabold text-slate-800 line-clamp-1">Detail Produk</h3>
+        <button type="button" data-close-modal="productDetailModal" class="w-8 h-8 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-700 flex items-center justify-center cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="detailModalContent" class="p-4 overflow-y-auto space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- MODAL KERANJANG & CHECKOUT -->
+  <div id="cartModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-Hibualamo text-white">
+        <h3 class="text-sm font-extrabold flex items-center gap-2">
+          <i class="fa-solid fa-cart-shopping"></i> Keranjang Belanja & Checkout
+        </h3>
+        <button type="button" data-close-modal="cartModal" class="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4 text-xs">
+        <div id="cartItemsContainer" class="space-y-2.5"></div>
+
+        <!-- FORM CHECKOUT -->
+        <div id="checkoutFormSection" class="border-t border-slate-200 pt-4 space-y-3">
+          <h4 class="font-extrabold text-slate-800 text-sm">Data Pengiriman Pembeli</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Penerima *</label>
+              <input id="chkNama" type="text" placeholder="Masukkan nama lengkap..." class="w-full px-3 py-2 rounded-lg border border-slate-300">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp Aktif *</label>
+              <input id="chkWa" type="tel" placeholder="0812xxxx" class="w-full px-3 py-2 rounded-lg border border-slate-300">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Alamat Lengkap Pengiriman *</label>
+            <textarea id="chkAlamat" rows="2" placeholder="Nama jalan, RT/RW, Desa/Kelurahan, Kecamatan, Patokan rumah..." class="w-full px-3 py-2 rounded-lg border border-slate-300"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Pilih Opsi Pengiriman</label>
+              <select id="chkKurir" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold">
+                <option value="Kurir Toko Dalam Kota|10000">Kurir Toko Dalam Kota (Rp10.000)</option>
+                <option value="J&T / JNE Reguler|18000">Ekspedisi Reguler (Rp18.000)</option>
+                <option value="Pengiriman Luar Kota|0">Pengiriman Luar Kota (Konfirmasi WA)</option>
+                <option value="Armada Pick Up / Truk|0">Armada Pick Up / Truk (Konfirmasi WA)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Metode Pembayaran</label>
+              <select id="chkMetodeBayar" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold">
+                <option value="COD (Bayar di Tempat)">COD (Bayar di Tempat)</option>
+                <option value="Transfer Bank">Transfer Bank</option>
+                <option value="QRIS">Scan QRIS</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- INFO REKENING / QRIS -->
+          <div id="paymentInfoBox" class="hidden bg-orange-50 p-3 rounded-xl border border-orange-200 space-y-2"></div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Catatan Pesanan (Opsional)</label>
+            <input id="chkCatatan" type="text" placeholder="Contoh: Packing rapi, kirim sore hari..." class="w-full px-3 py-2 rounded-lg border border-slate-300">
+          </div>
+
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+            <div class="flex justify-between text-slate-600">
+              <span>Subtotal Produk</span>
+              <span id="chkSubtotalText" class="font-bold">Rp0</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Estimasi Ongkir</span>
+              <span id="chkOngkirText" class="font-bold">Rp10.000</span>
+            </div>
+            <div class="flex justify-between text-sm font-extrabold text-Hibualamo pt-1 border-t border-slate-200">
+              <span>Total Tagihan</span>
+              <span id="chkTotalText">Rp0</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            data-action="submit-checkout"
+            class="w-full bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold py-3 rounded-xl shadow-md transition cursor-pointer text-xs sm:text-sm"
+          >
+            <i class="fa-brands fa-whatsapp mr-1.5 text-base"></i> Buat Pesanan & Konfirmasi WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LACAK PESANAN -->
+  <div id="trackOrderModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+        <h3 class="text-sm font-extrabold flex items-center gap-2">
+          <i class="fa-solid fa-truck-fast text-Hibualamo"></i> Lacak Status Pesanan
+        </h3>
+        <button type="button" data-close-modal="trackOrderModal" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-3 text-xs overflow-y-auto">
+        <p class="text-slate-600">Masukkan <strong>ID Pesanan</strong> (contoh: ORD-1234) atau <strong>Nomor WhatsApp</strong> yang digunakan saat memesan:</p>
+        <div class="flex gap-2">
+          <input id="trackOrderInput" type="text" placeholder="Ketik ORD-xxxx atau 0812xxxx..." class="flex-1 px-3 py-2 rounded-lg border border-slate-300">
+          <button type="button" data-action="submit-track-order" class="bg-Hibualamo text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+            Cari
+          </button>
+        </div>
+        <div id="trackOrderResultContainer" class="space-y-2 pt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RAHASIA PIN ADMIN (MUNCUL SETELAH KLIK LOGO 10X) -->
+  <div id="adminPinModal" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-9 h-9 rounded-xl bg-Hibualamo/10 text-Hibualamo flex items-center justify-center font-bold">
+            <i class="fa-solid fa-lock"></i>
+          </span>
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-800">Akses Panel Admin</h3>
+            <p class="text-[11px] text-slate-500">Masukkan Password / PIN Admin Toko</p>
+          </div>
+        </div>
+        <button type="button" data-close-modal="adminPinModal" class="text-slate-400 hover:text-slate-600 cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <input
+        id="adminPinInput"
+        type="password"
+        placeholder="Masukkan PIN Admin..."
+        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-Hibualamo"
+      >
+
+      <div class="flex justify-end gap-2">
+        <button type="button" data-close-modal="adminPinModal" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 cursor-pointer">
+          Batal
+        </button>
+        <button type="button" data-action="verify-admin-pin" class="px-5 py-2 rounded-xl bg-Hibualamo hover:bg-HibualamoDark text-white text-xs font-extrabold cursor-pointer">
+          Buka Panel Admin
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KAMERA ADMIN -->
+  <div id="cameraModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="text-xs font-extrabold"><i class="fa-solid fa-camera mr-1.5"></i> Ambil Foto Produk</h3>
+        <button type="button" data-action="admin-close-camera" class="text-white/80 hover:text-white cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="aspect-square bg-black rounded-xl overflow-hidden">
+          <video id="cameraVideoEl" autoplay playsinline class="w-full h-full object-cover"></video>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <button type="button" data-action="admin-switch-camera" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
+            <i class="fa-solid fa-camera-rotate mr-1"></i> Balik Kamera
+          </button>
+          <button type="button" data-action="admin-capture-photo" class="flex-1 py-2.5 rounded-xl bg-Hibualamo text-white text-xs font-extrabold cursor-pointer">
+            <i class="fa-solid fa-circle-dot mr-1"></i> Jepret Foto
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING LIVE CHAT BUTTON & BOX -->
+  <div class="fixed bottom-4 right-4 z-40">
+    <div id="liveChatBox" class="hidden mb-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-Hibualamo text-white px-3.5 py-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-headset"></i>
+          <span class="text-xs font-extrabold">CS Hibualamo Store</span>
+        </div>
+        <button type="button" data-action="toggle-live-chat" class="text-white/80 hover:text-white cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="liveChatMessagesContainer" class="p-3 h-56 overflow-y-auto space-y-2 bg-slate-50 text-xs"></div>
+      <div class="p-2 border-t border-slate-200 flex gap-1.5 bg-white">
+        <input id="liveChatInput" type="text" placeholder="Tulis pesan..." class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs">
+        <button type="button" data-action="send-live-chat" class="bg-Hibualamo text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      data-action="toggle-live-chat"
+      class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-xs font-extrabold cursor-pointer ml-auto"
+    >
+      <i class="fa-brands fa-whatsapp text-base"></i>
+      <span>Chat Admin</span>
+    </button>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- SCRIPT UTAMA APLIKASI -->
+  <script>
+    // Jika Anda menghosting HTML ini di luar Google Apps Script (misal Vercel / GitHub),
+    // tempelkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzcUp3r0ssW5HNVzlh5QXH-jfUxdQ2CkpETlS5K2D1M5NbzmVkla2jH4HJR40vd-OyhyA/exec';
+
+    const DUMMY_PRODUCT_IDS = ['PRD-001', 'PRD-002', 'PRD-003', 'PRD-004', 'PRD-005', 'PRD-006', 'PRD-007', 'PRD-008'];
+
+    const MOCK_DATA = {
+      supplier: [
+        { idSupplier: 'SUP-001', namaSupplier: 'PT Sumber Elektronik Jaya', jenisSupplier: 'Distributor Resmi', alamat: 'Jl. Mangga Dua Raya No. 18, Jakarta Pusat', kontakPerson: 'Bpk. Hendra (081299887766)' },
+        { idSupplier: 'SUP-002', namaSupplier: 'CV Konveksi Nusantara', jenisSupplier: 'Produsen Lokal', alamat: 'Jl. Cigondewah Kidul No. 42, Kota Bandung', kontakPerson: 'Ibu Rina (081322334455)' },
+        { idSupplier: 'SUP-003', namaSupplier: 'UD Pangan Nusantara Mandiri', jenisSupplier: 'Grosir / Produsen', alamat: 'Jl. Soekarno Hatta No. 89, Bandar Lampung', kontakPerson: 'Bpk. Anton (081566778899)' },
+        { idSupplier: 'SUP-004', namaSupplier: 'Global Living Importir', jenisSupplier: 'Importir', alamat: 'Kawasan Pergudangan Pantai Indah Dadap, Tangerang', kontakPerson: 'Bpk. Kevin (081122339988)' }
+      ],
+      produk: [
+        {
+          id: 'PRD-001',
+          nama: 'TWS Earbuds Bluetooth 5.3 Bass Hifi Waterproof IPX5 Gaming Low Latency',
+          kategori: 'Elektronik',
+          subKategori: 'Audio',
+          hargaSupplier: 65000,
+          hargaAsli: 250000,
+          hargaDiskon: 99000,
+          stok: 45,
+          terjual: 1420,
+          rating: 4.9,
+          gambar: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80',
+          varian: ['Hitam', 'Putih', 'Pink Pastel'],
+          isFlashSale: true,
+          badge: 'Mall',
+          deskripsi: 'TWS Bluetooth 5.3 generasi terbaru dengan suara Super Bass jernih, baterai tahan hingga 24 jam bersama charging case, dan fitur gaming mode tanpa delay.',
+          idSupplier: 'SUP-001',
+          namaSupplier: 'PT Sumber Elektronik Jaya'
+        },
+        {
+          id: 'PRD-002',
+          nama: 'Kemeja Flanel Pria Lengan Panjang Premium Casual Distro Kotak-Kotak',
+          kategori: 'Fashion',
+          subKategori: 'Pakaian Pria',
+          hargaSupplier: 58000,
+          hargaAsli: 185000,
+          hargaDiskon: 89000,
+          stok: 80,
+          terjual: 890,
+          rating: 4.8,
+          gambar: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80',
+          varian: ['Ukuran M', 'Ukuran L', 'Ukuran XL'],
+          isFlashSale: true,
+          badge: 'Star+',
+          deskripsi: 'Bahan katun flanel import tebal, adem, dan tidak mudah berbulu. Cocok untuk kuliah, kerja santai, maupun hangout.',
+          idSupplier: 'SUP-002',
+          namaSupplier: 'CV Konveksi Nusantara'
+        },
+        {
+          id: 'PRD-003',
+          nama: 'Smartwatch Sport AMOLED Jam Tangan Pintar Heart Rate Monitor Waterproof',
+          kategori: 'Elektronik',
+          subKategori: 'Gadget',
+          hargaSupplier: 135000,
+          hargaAsli: 450000,
+          hargaDiskon: 195000,
+          stok: 25,
+          terjual: 2150,
+          rating: 4.9,
+          gambar: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80',
+          varian: ['Black Strap', 'Silver Strap', 'Rose Gold'],
+          isFlashSale: true,
+          badge: 'Mall',
+          deskripsi: 'Layar sentuh penuh HD AMOLED 1.85 inch dengan pemantau detak jantung 24 jam, penghitung langkah, notifikasi WhatsApp, dan tahan air IP68.',
+          idSupplier: 'SUP-001',
+          namaSupplier: 'PT Sumber Elektronik Jaya'
+        },
+        {
+          id: 'PRD-004',
+          nama: 'Sepatu Sneakers Running Olahraga Pria Wanita Breathable Ringan',
+          kategori: 'Fashion',
+          subKategori: 'Sepatu',
+          hargaSupplier: 95000,
+          hargaAsli: 320000,
+          hargaDiskon: 149000,
+          stok: 60,
+          terjual: 640,
+          rating: 4.7,
+          gambar: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80',
+          varian: ['Size 39', 'Size 40', 'Size 41', 'Size 42', 'Size 43'],
+          isFlashSale: false,
+          badge: 'Star+',
+          deskripsi: 'Desain ergonomis dengan sol karet anti selip dan bahan rajut berpori yang membuat kaki tetap sejuk saat berlari atau jalan jauh.',
+          idSupplier: 'SUP-002',
+          namaSupplier: 'CV Konveksi Nusantara'
+        },
+        {
+          id: 'PRD-005',
+          nama: 'Keripik Pisang Coklat Lumer Lampung Kemasan Pouch 250gr Crispy',
+          kategori: 'Makanan',
+          subKategori: 'Cemilan',
+          hargaSupplier: 18000,
+          hargaAsli: 45000,
+          hargaDiskon: 28000,
+          stok: 150,
+          terjual: 3400,
+          rating: 4.9,
+          gambar: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281298?auto=format&fit=crop&w=600&q=80',
+          varian: ['Coklat Lumer', 'Matcha', 'Keju Susu', 'Tiramisu'],
+          isFlashSale: true,
+          badge: 'Star+',
+          deskripsi: 'Keripik pisang kepok pilihan yang renyah dengan balutan bubuk dan saus coklat premium tebal. Tanpa bahan pengawet, halal dan bikin nagih!',
+          idSupplier: 'SUP-003',
+          namaSupplier: 'UD Pangan Nusantara Mandiri'
+        },
+        {
+          id: 'PRD-006',
+          nama: 'Tas Ransel Laptop Backpack Waterproof Anti Maling USB Port 15.6 Inch',
+          kategori: 'Aksesoris',
+          subKategori: 'Tas',
+          hargaSupplier: 75000,
+          hargaAsli: 210000,
+          hargaDiskon: 115000,
+          stok: 40,
+          terjual: 530,
+          rating: 4.8,
+          gambar: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
+          varian: ['Abu-abu', 'Hitam', 'Navy'],
+          isFlashSale: false,
+          badge: 'Mall',
+          deskripsi: 'Kapasitas besar dengan kompartemen khusus laptop hingga 15.6 inci, bahan Oxford tahan cipratan air, dan dilengkapi port USB eksternal.',
+          idSupplier: 'SUP-004',
+          namaSupplier: 'Global Living Importir'
+        },
+        {
+          id: 'PRD-007',
+          nama: 'Lampu Meja Belajar LED Rechargeable Touch Dimmer Eye Protection',
+          kategori: 'Rumah Tangga',
+          subKategori: 'Penerangan',
+          hargaSupplier: 38000,
+          hargaAsli: 120000,
+          hargaDiskon: 59000,
+          stok: 95,
+          terjual: 1120,
+          rating: 4.8,
+          gambar: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=600&q=80',
+          varian: ['Putih Warm', 'Putih Cool'],
+          isFlashSale: false,
+          badge: 'Star+',
+          deskripsi: 'Lampu baca LED dengan 3 tingkat kecerahan sentuh, leher fleksibel 360 derajat, serta baterai tanam yang dapat diisi ulang via kabel Type-C.',
+          idSupplier: 'SUP-004',
+          namaSupplier: 'Global Living Importir'
+        },
+        {
+          id: 'PRD-008',
+          nama: 'Kopi Arabika Gayo Aceh Specialty 250gr Biji / Bubuk Fresh Roast',
+          kategori: 'Makanan',
+          subKategori: 'Minuman',
+          hargaSupplier: 45000,
+          hargaAsli: 95000,
+          hargaDiskon: 68000,
+          stok: 70,
+          terjual: 780,
+          rating: 5.0,
+          gambar: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=600&q=80',
+          varian: ['Bubuk Halus', 'Bubuk Sedang', 'Biji Utuh'],
+          isFlashSale: false,
+          badge: 'Mall',
+          deskripsi: '100% Kopi Arabika Gayo asli dari dataran tinggi Aceh. Dipanggang medium roast dengan aroma rempah dan coklat yang khas.',
+          idSupplier: 'SUP-003',
+          namaSupplier: 'UD Pangan Nusantara Mandiri'
+        }
+      ],
+      voucher: [],
+      ulasan: [
+        { id: 'REV-001', idProduk: 'PRD-001', nama: 'Andi P***', rating: 5, komentar: 'Suara bass mantap banget untuk harga segini! Koneksi ke HP cepat.', varian: 'Hitam', tanggal: '10 Februari 2025, 14:20' },
+        { id: 'REV-002', idProduk: 'PRD-001', nama: 'Siti N***', rating: 5, komentar: 'Warna pink pastelnya lucu, pengiriman juga cepat sampai.', varian: 'Pink Pastel', tanggal: '12 Februari 2025, 09:45' },
+        { id: 'REV-003', idProduk: 'PRD-002', nama: 'Rizky F***', rating: 5, komentar: 'Kain flanelnya lembut dan tebal, ukuran L pas di badan saya.', varian: 'Ukuran L', tanggal: '14 Februari 2025, 19:10' },
+        { id: 'REV-004', idProduk: 'PRD-003', nama: 'Dewi K***', rating: 5, komentar: 'Layar AMOLED-nya jernih banget, kelihatan seperti jam tangan mahal!', varian: 'Rose Gold', tanggal: '15 Februari 2025, 11:30' },
+        { id: 'REV-005', idProduk: 'PRD-005', nama: 'Fajar M***', rating: 5, komentar: 'Coklat lumernya melimpah, pisangnya gak keras sama sekali.', varian: 'Coklat Lumer', tanggal: '16 Februari 2025, 16:05' }
+      ],
+      orders: []
+    };
+
+    let state = {
+      produk: [...MOCK_DATA.produk],
+      voucher: [],
+      ulasan: [...MOCK_DATA.ulasan],
+      supplier: [...MOCK_DATA.supplier],
+      kategoriList: ['Elektronik', 'Fashion', 'Makanan', 'Aksesoris', 'Rumah Tangga'],
+      subKategoriMap: {
+        'Elektronik': ['Audio', 'Gadget'],
+        'Fashion': ['Pakaian Pria', 'Sepatu'],
+        'Makanan': ['Cemilan', 'Minuman'],
+        'Aksesoris': ['Tas'],
+        'Rumah Tangga': ['Penerangan']
+      },
+      selectedCategory: 'Semua',
+      selectedSubCategory: 'Semua',
+      searchQuery: '',
+      sortBy: 'populer',
+      cart: [],
+      localOrders: [],
+      lockedProductIds: [],
+      unlockedProductIds: [],
+      hideDummyProducts: false,
+      pengaturanBayar: {
+        qrisUrl: 'https://placehold.co/300x300/1e293b/ffffff?text=QRIS+HibualamoStore',
+        noRekening: 'Bank Mandiri - 1860000119434',
+        namaPemilikRekening: 'Andri Illa',
+        noWaAdmin: '08215075520',
+        gmailPemilik: '',
+        logoUrl: ''
+      },
+      savedGasApiUrl: '',
+      localAdminPin: 'Jangan@123',
+      verifiedAdminPin: '',
+      logoClickCount: 0,
+      logoClickTimer: null,
+      activeDetailProduct: null,
+      selectedDetailVariant: 'Standar',
+      detailQty: 1,
+      editingProductId: '',
+      editingReviewId: '',
+      visitorId: '',
+      visitorStats: {
+        onlineCount: 1,
+        todayCount: 1,
+        updatedAt: '-'
+      },
+      liveChatOpen: false,
+      liveChatMessages: [
+        {
+          sender: 'bot',
+          text: 'Halo kak! Selamat datang di Hibualamo Store 👋 Ada yang bisa kami bantu hari ini?',
+          time: 'Baru saja'
+        }
+      ]
+    };
+
+    let activeCameraStream = null;
+    let currentCameraFacingMode = 'environment';
+
+    function formatRupiah(num) {
+      const n = Number(num) || 0;
+      return 'Rp' + n.toLocaleString('id-ID');
+    }
+
+    function escapeHtmlAttr(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-red-600 text-white',
+        info: 'bg-slate-900 text-white'
+      };
+      const el = document.createElement('div');
+      el.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 transition duration-300 pointer-events-auto`;
+      el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i> <span>${escapeHtmlAttr(msg)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 2800);
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
+    function convertDriveUrl(url) {
+      if (!url) return '';
+      const clean = String(url).trim();
+      if (clean.startsWith('data:image')) return clean;
+      const match1 = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match1 && match1[1]) return `https://lh3.googleusercontent.com/d/${match1[1]}`;
+      const match2 = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match2 && match2[1]) return `https://lh3.googleusercontent.com/d/${match2[1]}`;
+      return clean;
+    }
+
+    function getActiveGasApiUrl() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramGas = (urlParams.get('gas_url') || urlParams.get('api') || '').trim();
+        if (paramGas && paramGas.startsWith('https://script.google.com/')) {
+          if (state.savedGasApiUrl !== paramGas) {
+            state.savedGasApiUrl = paramGas;
+            localStorage.setItem('HibualamoStore_gasApiUrl', paramGas);
+          }
+          return paramGas;
+        }
+      } catch (e) {}
+
+      if (typeof GAS_API_URL === 'string' && GAS_API_URL.trim().startsWith('https://script.google.com/')) {
+        return GAS_API_URL.trim();
+      }
+      const saved = String(state.savedGasApiUrl || '').trim();
+      if (saved && saved.startsWith('https://script.google.com/')) return saved;
+      return '';
+    }
+
+    function isRemoteServerConnected() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) return true;
+      return Boolean(getActiveGasApiUrl());
+    }
+
+    function normalizeProduct(p, idx = 0) {
+      if (!p || typeof p !== 'object') return null;
+      const prodId = String(p.id || p.ID_Produk || ('PRD-' + (idx + 1))).trim();
+      const rawNama = String(p.nama || p.Nama || '').trim();
+      if (!rawNama) return null;
+
+      const rawDeskripsi = String(p.deskripsi || p.Deskripsi || '');
+      const hasLockMarker = rawDeskripsi.indexOf('[LOCKED]') === 0;
+      const cleanDeskripsi = hasLockMarker ? rawDeskripsi.replace(/^\[LOCKED\]\s*/, '') : rawDeskripsi;
+
+      const hargaDiskon = Number(p.hargaDiskon !== undefined ? p.hargaDiskon : p.Harga_Diskon) || 0;
+      const hargaAsli = Number(p.hargaAsli !== undefined ? p.hargaAsli : p.Harga_Asli) || hargaDiskon;
+      const hargaSupplier = Number(p.hargaSupplier !== undefined ? p.hargaSupplier : p.Harga_Supplier) || 0;
+
+      let varianArr = ['Standar'];
+      if (Array.isArray(p.varian) && p.varian.length > 0) {
+        varianArr = p.varian.map(v => String(v).trim()).filter(Boolean);
+      } else if (typeof (p.varian || p.Varian) === 'string' && String(p.varian || p.Varian).trim() !== '') {
+        varianArr = String(p.varian || p.Varian).split(',').map(v => v.trim()).filter(Boolean);
+      }
+      if (varianArr.length === 0) varianArr = ['Standar'];
+
+      const isUnlockedLocally = Array.isArray(state.unlockedProductIds) && state.unlockedProductIds.includes(prodId);
+      const isProdLocked = !isUnlockedLocally && Boolean(
+        p.isLocked === true ||
+        String(p.isLocked).toUpperCase() === 'TRUE' ||
+        hasLockMarker ||
+        (Array.isArray(state.lockedProductIds) && state.lockedProductIds.includes(prodId))
+      );
+
+      if (isProdLocked && Array.isArray(state.lockedProductIds) && !state.lockedProductIds.includes(prodId)) {
+        state.lockedProductIds.push(prodId);
+      }
+
+      const rawKat = String(p.kategori || p.Kategori || 'Lainnya');
+      const katParts = rawKat.split('::');
+      const mainKat = String(katParts[0] || 'Lainnya').trim();
+      const subKat = String(p.subKategori || katParts[1] || '').trim();
+
+      return {
+        id: prodId,
+        nama: rawNama,
+        kategori: mainKat,
+        subKategori: subKat,
+        hargaSupplier,
+        hargaAsli,
+        hargaDiskon,
+        stok: Number(p.stok !== undefined ? p.stok : p.Stok) || 0,
+        terjual: Number(p.terjual !== undefined ? p.terjual : p.Terjual) || 0,
+        rating: Number(p.rating !== undefined ? p.rating : p.Rating) || 5.0,
+        gambar: String(p.gambar || p.URL_Gambar || ''),
+        varian: varianArr,
+        isFlashSale: Boolean(p.isFlashSale === true || String(p.isFlashSale || p.Is_FlashSale).toUpperCase() === 'TRUE'),
+        badge: String(p.badge || p.Badge || 'Star+'),
+        deskripsi: cleanDeskripsi,
+        idSupplier: String(p.idSupplier || p.ID_Supplier || ''),
+        namaSupplier: String(p.namaSupplier || p.Nama_Supplier || '-'),
+        isLocked: isProdLocked
+      };
+    }
+
+    function isProductVisibleOnWeb(p) {
+      if (!p) return false;
+      const pid = String(p.id || '').trim();
+      if (state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(pid)) return false;
+      if (p.isLocked) return false;
+      if (Array.isArray(state.lockedProductIds) && state.lockedProductIds.includes(pid)) return false;
+      return true;
+    }
+
+    function normalizeReview(r, idx = 0) {
+      if (!r || typeof r !== 'object') return null;
+      return {
+        id: String(r.id || r.ID_Ulasan || ('REV-' + (100 + idx))),
+        idProduk: String(r.idProduk || r.ID_Produk || 'PRD-001'),
+        nama: String(r.nama || r.Nama_Pembeli || 'Pembeli Hibualamo'),
+        rating: Math.min(5, Math.max(1, Number(r.rating || r.Rating) || 5)),
+        komentar: String(r.komentar || r.Komentar || ''),
+        varian: String(r.varian || r.Varian || 'Standar'),
+        tanggal: String(r.tanggal || r.Tanggal || '')
+      };
+    }
+
+    function mergeProductsPreservingCustom(remoteList, localList) {
+      const normalizedRemote = (Array.isArray(remoteList) ? remoteList : [])
+        .map((p, i) => normalizeProduct(p, i))
+        .filter(Boolean);
+      const normalizedLocal = (Array.isArray(localList) ? localList : [])
+        .map((p, i) => normalizeProduct(p, i))
+        .filter(Boolean);
+
+      const map = new Map();
+      normalizedRemote.forEach(p => {
+        if (state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)) return;
+        map.set(p.id, p);
+      });
+      normalizedLocal.forEach(p => {
+        if (state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)) return;
+        if (!map.has(p.id)) {
+          map.set(p.id, p);
+        }
+      });
+
+      const merged = Array.from(map.values());
+      return merged.length > 0 ? merged : normalizedRemote;
+    }
+
+    function loadLocalState() {
+      try {
+        const savedGasUrl = localStorage.getItem('HibualamoStore_gasApiUrl');
+        if (savedGasUrl && savedGasUrl.startsWith('https://script.google.com/')) {
+          state.savedGasApiUrl = savedGasUrl.trim();
+        }
+        const savedHideDummy = localStorage.getItem('HibualamoStore_hideDummyProducts');
+        if (savedHideDummy === 'true') {
+          state.hideDummyProducts = true;
+        }
+        const savedLockedProds = localStorage.getItem('HibualamoStore_lockedProductIds');
+        if (savedLockedProds) {
+          const parsedLocked = JSON.parse(savedLockedProds);
+          if (Array.isArray(parsedLocked)) {
+            state.lockedProductIds = parsedLocked.map(id => String(id).trim()).filter(Boolean);
+          }
+        }
+        const savedUnlockedProds = localStorage.getItem('HibualamoStore_unlockedProductIds');
+        if (savedUnlockedProds) {
+          const parsedUnlocked = JSON.parse(savedUnlockedProds);
+          if (Array.isArray(parsedUnlocked)) {
+            state.unlockedProductIds = parsedUnlocked.map(id => String(id).trim()).filter(Boolean);
+          }
+        }
+        const savedProds = localStorage.getItem('HibualamoStore_produk');
+        if (savedProds) {
+          const parsedProds = JSON.parse(savedProds);
+          if (Array.isArray(parsedProds) && parsedProds.length > 0) {
+            state.produk = mergeProductsPreservingCustom(parsedProds, state.produk);
+          }
+        }
+        const savedCats = localStorage.getItem('HibualamoStore_kategoriList');
+        if (savedCats) {
+          const parsedCats = JSON.parse(savedCats);
+          if (Array.isArray(parsedCats) && parsedCats.length > 0) {
+            state.kategoriList = parsedCats;
+          }
+        }
+        const savedSubCats = localStorage.getItem('HibualamoStore_subKategoriMap');
+        if (savedSubCats) {
+          const parsedSub = JSON.parse(savedSubCats);
+          if (parsedSub && typeof parsedSub === 'object') {
+            state.subKategoriMap = parsedSub;
+          }
+        }
+        const savedReviews = localStorage.getItem('HibualamoStore_ulasan');
+        if (savedReviews) {
+          const parsedRev = JSON.parse(savedReviews);
+          if (Array.isArray(parsedRev) && parsedRev.length > 0) {
+            state.ulasan = parsedRev.map((r, idx) => normalizeReview(r, idx)).filter(Boolean);
+          }
+        }
+        const savedSuppliers = localStorage.getItem('HibualamoStore_supplier');
+        if (savedSuppliers) {
+          const parsedSup = JSON.parse(savedSuppliers);
+          if (Array.isArray(parsedSup) && parsedSup.length > 0) {
+            state.supplier = parsedSup;
+          }
+        }
+        const savedOrders = localStorage.getItem('HibualamoStore_orders');
+        if (savedOrders) {
+          const parsedOrd = JSON.parse(savedOrders);
+          if (Array.isArray(parsedOrd)) {
+            state.localOrders = parsedOrd;
+          }
+        }
+        const savedCart = localStorage.getItem('HibualamoStore_cart');
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          if (Array.isArray(parsedCart)) {
+            state.cart = parsedCart;
+          }
+        }
+        const savedPay = localStorage.getItem('HibualamoStore_pengaturanBayar');
+        if (savedPay) {
+          const parsedPay = JSON.parse(savedPay);
+          if (parsedPay && typeof parsedPay === 'object') {
+            state.pengaturanBayar = { ...state.pengaturanBayar, ...parsedPay };
+          }
+        }
+        const savedPin = localStorage.getItem('HibualamoStore_adminPin');
+        if (savedPin) {
+          state.localAdminPin = savedPin;
+        }
+      } catch (e) {
+        console.warn('Gagal memuat localStorage:', e);
+      }
+    }
+
+    function saveLocalState() {
+      try {
+        if (state.savedGasApiUrl) {
+          localStorage.setItem('HibualamoStore_gasApiUrl', state.savedGasApiUrl);
+        }
+        localStorage.setItem('HibualamoStore_hideDummyProducts', String(Boolean(state.hideDummyProducts)));
+        localStorage.setItem('HibualamoStore_lockedProductIds', JSON.stringify(state.lockedProductIds || []));
+        localStorage.setItem('HibualamoStore_unlockedProductIds', JSON.stringify(state.unlockedProductIds || []));
+        localStorage.setItem('HibualamoStore_produk', JSON.stringify(state.produk || []));
+        localStorage.setItem('HibualamoStore_kategoriList', JSON.stringify(state.kategoriList || []));
+        localStorage.setItem('HibualamoStore_subKategoriMap', JSON.stringify(state.subKategoriMap || {}));
+        localStorage.setItem('HibualamoStore_ulasan', JSON.stringify(state.ulasan || []));
+        localStorage.setItem('HibualamoStore_supplier', JSON.stringify(state.supplier || []));
+        localStorage.setItem('HibualamoStore_orders', JSON.stringify(state.localOrders || []));
+        localStorage.setItem('HibualamoStore_cart', JSON.stringify(state.cart || []));
+        localStorage.setItem('HibualamoStore_pengaturanBayar', JSON.stringify(state.pengaturanBayar || {}));
+        localStorage.setItem('HibualamoStore_adminPin', state.localAdminPin || 'Jangan@123');
+      } catch (e) {
+        console.warn('Gagal menyimpan ke localStorage:', e);
+      }
+    }
+
+    function callServerJsonp(apiUrl, action, args) {
+      return new Promise((resolve, reject) => {
+        const cbName = 'hibualamoJsonpCb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        const script = document.createElement('script');
+        let timer = null;
+
+        function cleanup() {
+          if (timer) clearTimeout(timer);
+          delete window[cbName];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cbName] = function(data) {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = function() {
+          cleanup();
+          reject(new Error('JSONP request gagal'));
+        };
+
+        timer = setTimeout(() => {
+          cleanup();
+          reject(new Error('JSONP timeout'));
+        }, 12000);
+
+        const encodedArgs = encodeURIComponent(JSON.stringify(args || []));
+        const sep = apiUrl.includes('?') ? '&' : '?';
+        script.src = `${apiUrl}${sep}action=${encodeURIComponent(action)}&args=${encodedArgs}&callback=${cbName}&_t=${Date.now()}`;
+        document.body.appendChild(script);
+      });
+    }
+
+    async function callServer(action, ...args) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return new Promise((resolve) => {
+          google.script.run
+            .withSuccessHandler(res => resolve(res))
+            .withFailureHandler(() => resolve(handleLocalMockAction(action, args)))[action](...args);
+        });
+      }
+
+      const apiUrl = getActiveGasApiUrl();
+      if (apiUrl) {
+        try {
+          const sep = apiUrl.includes('?') ? '&' : '?';
+          const response = await fetch(`${apiUrl}${sep}_t=${Date.now()}`, {
+            method: 'POST',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action, args })
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data && typeof data === 'object') return data;
+          }
+        } catch (errPost) {
+          const largeActions = ['adminUploadImageToDrive', 'createOrder', 'adminSaveProduct', 'adminSaveSubCategories'];
+          if (!largeActions.includes(action)) {
+            try {
+              const jsonpFallback = await callServerJsonp(apiUrl, action, args);
+              if (jsonpFallback && typeof jsonpFallback === 'object') return jsonpFallback;
+            } catch (errJsonp) {}
+          }
+        }
+      }
+
+      return handleLocalMockAction(action, args);
+    }
+
+    function verifyLocalPin(inputPin) {
+      const clean = String(inputPin || '').trim();
+      return clean === state.localAdminPin || clean === 'Jangan@123';
+    }
+
+    function handleLocalMockAction(action, args) {
+      switch (action) {
+        case 'getInitialData':
+          return {
+            success: true,
+            produk: state.produk,
+            ulasan: state.ulasan,
+            supplier: state.supplier,
+            kategoriList: state.kategoriList,
+            subKategoriMap: state.subKategoriMap,
+            pengaturanBayar: state.pengaturanBayar,
+            lockedProductIds: state.lockedProductIds,
+            hideDummyProducts: state.hideDummyProducts
+          };
+
+        case 'pingVisitor':
+          return {
+            success: true,
+            visitorStats: state.visitorStats
+          };
+
+        case 'adminGetVisitorStats':
+          if (!verifyLocalPin(args[0])) return { success: false, message: 'Password / PIN Admin salah!' };
+          return {
+            success: true,
+            visitorStats: state.visitorStats
+          };
+
+        case 'createOrder': {
+          const payload = args[0] || {};
+          const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+          const tanggal = new Date().toLocaleString('id-ID');
+          const ringkasanItem = (payload.items || []).map(it => `${it.qty}x ${it.nama} (${it.varian})`).join(', ');
+          const newOrder = {
+            idPesanan: orderId,
+            tanggal,
+            namaPembeli: payload.namaPembeli,
+            noWa: payload.noWa,
+            alamat: payload.alamat,
+            catatan: payload.catatan || '-',
+            items: payload.items || [],
+            ringkasanItem,
+            subtotal: Number(payload.subtotal) || 0,
+            ongkir: Number(payload.ongkir) || 0,
+            totalBayar: Number(payload.totalBayar) || 0,
+            kurir: payload.kurir,
+            metodeBayar: payload.metodeBayar,
+            status: 'Belum Bayar',
+            noResi: '-'
+          };
+          return { success: true, order: newOrder };
+        }
+
+        case 'trackOrder': {
+          const q = String(args[0] || '').trim().toLowerCase();
+          const qDigits = q.replace(/\D/g, '');
+          const found = state.localOrders.filter(o => {
+            const matchId = String(o.idPesanan || '').toLowerCase().includes(q);
+            const matchWa = qDigits.length >= 4 && String(o.noWa || '').replace(/\D/g, '').includes(qDigits);
+            return matchId || matchWa;
+          });
+          return { success: true, orders: found };
+        }
+
+        case 'submitReview': {
+          const rev = args[0] || {};
+          const reviewObj = {
+            id: 'REV-' + Math.floor(1000 + Math.random() * 9000),
+            idProduk: rev.idProduk || 'PRD-001',
+            nama: rev.namaPembeli || 'Pembeli Hibualamo',
+            rating: Number(rev.rating) || 5,
+            komentar: rev.komentar || '',
+            varian: rev.varian || 'Standar',
+            tanggal: rev.tanggalLokal || new Date().toLocaleDateString('id-ID')
+          };
+          return { success: true, review: reviewObj };
+        }
+
+        case 'adminGetOrders': {
+          if (!verifyLocalPin(args[0])) return { success: false, message: 'Password / PIN Admin salah!' };
+          return {
+            success: true,
+            orders: state.localOrders,
+            produk: state.produk,
+            ulasan: state.ulasan,
+            supplier: state.supplier,
+            kategoriList: state.kategoriList,
+            subKategoriMap: state.subKategoriMap,
+            pengaturanBayar: state.pengaturanBayar,
+            lockedProductIds: state.lockedProductIds,
+            hideDummyProducts: state.hideDummyProducts,
+            visitorStats: state.visitorStats
+          };
+        }
+
+        case 'adminUpdateOrder': {
+          const [pin, idPesanan, statusBaru, resiBaru] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          const ord = state.localOrders.find(o => String(o.idPesanan) === String(idPesanan));
+          if (ord) {
+            ord.status = statusBaru;
+            ord.noResi = resiBaru || '-';
+            saveLocalState();
+          }
+          return { success: true, message: 'Status pesanan diperbarui!' };
+        }
+
+        case 'adminSaveProduct': {
+          const [pin, prod] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          const id = prod.id || ('PRD-' + Math.floor(100 + Math.random() * 900));
+          return { success: true, id, gambar: prod.gambar, message: 'Produk berhasil disimpan!' };
+        }
+
+        case 'adminUploadImageToDrive': {
+          const [pin, base64Data] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          return { success: true, url: base64Data, message: 'Gambar berhasil diproses!' };
+        }
+
+        case 'adminToggleProductLock': {
+          const [pin, idProduk, isLocked] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          const cleanId = String(idProduk || '').trim();
+          if (isLocked) {
+            if (!state.lockedProductIds.includes(cleanId)) state.lockedProductIds.push(cleanId);
+          } else {
+            state.lockedProductIds = state.lockedProductIds.filter(id => id !== cleanId);
+          }
+          saveLocalState();
+          return { success: true, idProduk: cleanId, isLocked, lockedProductIds: state.lockedProductIds };
+        }
+
+        case 'adminSaveReview': {
+          const [pin, revPayload] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          const id = revPayload.id || ('REV-' + Math.floor(1000 + Math.random() * 9000));
+          const review = {
+            id,
+            idProduk: revPayload.idProduk,
+            nama: revPayload.nama,
+            rating: Number(revPayload.rating) || 5,
+            komentar: revPayload.komentar,
+            varian: revPayload.varian || 'Standar',
+            tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+          };
+          return { success: true, review, message: 'Ulasan berhasil disimpan!' };
+        }
+
+        case 'adminDeleteReview': {
+          const [pin] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          return { success: true, message: 'Ulasan berhasil dihapus!' };
+        }
+
+        case 'adminSaveSupplier': {
+          const [pin] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          return { success: true, message: 'Supplier berhasil disimpan!' };
+        }
+
+        case 'adminDeleteSupplier': {
+          const [pin] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          return { success: true, message: 'Supplier berhasil dihapus!' };
+        }
+
+        case 'adminAddCategory': {
+          const [pin, namaKat] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          if (!state.kategoriList.includes(namaKat)) state.kategoriList.push(namaKat);
+          saveLocalState();
+          return { success: true, kategoriList: state.kategoriList, message: 'Kategori ditambahkan!' };
+        }
+
+        case 'adminDeleteCategory': {
+          const [pin, namaKat] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          state.kategoriList = state.kategoriList.filter(k => k !== namaKat);
+          saveLocalState();
+          return { success: true, kategoriList: state.kategoriList, message: 'Kategori dihapus!' };
+        }
+
+        case 'adminSaveSubCategories': {
+          const [pin, subMap] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          state.subKategoriMap = subMap || {};
+          saveLocalState();
+          return { success: true, subKategoriMap: state.subKategoriMap, message: 'Sub-kategori disimpan!' };
+        }
+
+        case 'adminSetHideDummy': {
+          const [pin, hideDummy] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          state.hideDummyProducts = Boolean(hideDummy);
+          saveLocalState();
+          return { success: true, hideDummyProducts: state.hideDummyProducts, message: 'Pengaturan produk dummy disimpan!' };
+        }
+
+        case 'adminSavePaymentSettings': {
+          const [pin, newPay] = args;
+          if (!verifyLocalPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+          state.pengaturanBayar = { ...state.pengaturanBayar, ...newPay };
+          saveLocalState();
+          return { success: true, pengaturanBayar: state.pengaturanBayar, message: 'Pengaturan disimpan!' };
+        }
+
+        case 'adminChangePassword': {
+          const [oldPin, newPin] = args;
+          if (!verifyLocalPin(oldPin)) return { success: false, message: 'Password / PIN lama salah!' };
+          state.localAdminPin = String(newPin).trim();
+          saveLocalState();
+          return { success: true, message: 'Password Admin berhasil diubah!' };
+        }
+
+        default:
+          return { success: true };
+      }
+    }
+
+    function initVisitorTracking() {
+      try {
+        let vid = localStorage.getItem('HibualamoStore_visitorId');
+        if (!vid) {
+          vid = 'VIS-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
+          localStorage.setItem('HibualamoStore_visitorId', vid);
+        }
+        state.visitorId = vid;
+        pingVisitorSession();
+        setInterval(pingVisitorSession, 60000);
+      } catch (e) {}
+    }
+
+    async function pingVisitorSession() {
+      try {
+        const res = await callServer('pingVisitor', state.visitorId);
+        if (res && res.success && res.visitorStats) {
+          state.visitorStats = res.visitorStats;
+          renderAdminVisitorStats();
+        }
+      } catch (e) {}
+    }
+
+    async function refreshAdminVisitorStats() {
+      const icon = document.getElementById('admRefreshVisitorIcon');
+      if (icon) icon.classList.add('fa-spin');
+      try {
+        const pin = state.verifiedAdminPin || state.localAdminPin;
+        const res = await callServer('adminGetVisitorStats', pin);
+        if (res && res.success && res.visitorStats) {
+          state.visitorStats = res.visitorStats;
+          renderAdminVisitorStats();
+          showToast('Status pengunjung diperbarui!', 'info');
+        }
+      } catch (e) {}
+      if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 400);
+    }
+
+    async function initStoreData() {
+      renderAllUI();
+      try {
+        const remoteConnected = isRemoteServerConnected();
+        const res = await callServer('getInitialData');
+        if (res && res.success) {
+          if (typeof res.hideDummyProducts === 'boolean') {
+            state.hideDummyProducts = res.hideDummyProducts;
+          }
+          if (Array.isArray(res.lockedProductIds)) {
+            state.lockedProductIds = res.lockedProductIds;
+            if (remoteConnected) {
+              state.unlockedProductIds = [];
+            }
+          }
+          if (Array.isArray(res.produk) && res.produk.length > 0) {
+            if (remoteConnected) {
+              state.produk = res.produk
+                .map((p, i) => normalizeProduct(p, i))
+                .filter(Boolean)
+                .filter(p => !(state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)));
+            } else {
+              state.produk = mergeProductsPreservingCustom(res.produk, state.produk);
+            }
+          }
+          if (Array.isArray(res.ulasan)) {
+            if (remoteConnected || res.ulasan.length > 0) {
+              state.ulasan = res.ulasan.map((r, i) => normalizeReview(r, i)).filter(Boolean);
+            }
+          }
+          if (Array.isArray(res.supplier) && res.supplier.length > 0) {
+            state.supplier = res.supplier;
+          }
+          if (Array.isArray(res.kategoriList) && res.kategoriList.length > 0) {
+            state.kategoriList = res.kategoriList;
+          }
+          if (res.subKategoriMap && typeof res.subKategoriMap === 'object') {
+            state.subKategoriMap = remoteConnected
+              ? res.subKategoriMap
+              : { ...state.subKategoriMap, ...res.subKategoriMap };
+          }
+          if (res.pengaturanBayar && typeof res.pengaturanBayar === 'object') {
+            state.pengaturanBayar = { ...state.pengaturanBayar, ...res.pengaturanBayar };
+          }
+          saveLocalState();
+          renderAllUI();
+        }
+      } catch (e) {
+        console.warn('Menggunakan data lokal:', e);
+      }
+    }
+
+    function renderAllUI() {
+      renderHeaderLogo();
+      renderFlashSale();
+      renderCategories();
+      renderProductCatalog();
+      updateCartBadges();
+    }
+
+    function renderHeaderLogo() {
+      const logoImg = document.getElementById('headerLogoImg');
+      const defaultIcon = document.getElementById('headerLogoDefaultIcon');
+      if (!logoImg || !defaultIcon) return;
+
+      const rawLogo = state.pengaturanBayar?.logoUrl || '';
+      const cleanLogo = convertDriveUrl(rawLogo);
+      if (cleanLogo) {
+        logoImg.src = cleanLogo;
+        logoImg.classList.remove('hidden');
+        defaultIcon.classList.add('hidden');
+      } else {
+        logoImg.src = '';
+        logoImg.classList.add('hidden');
+        defaultIcon.classList.remove('hidden');
+      }
+    }
+
+    function createProductCardHTML(p) {
+      const hargaAsli = Number(p.hargaAsli) || Number(p.hargaDiskon) || 0;
+      const hargaDiskon = Number(p.hargaDiskon) || 0;
+      const diskonPersen = hargaAsli > hargaDiskon
+        ? Math.round(((hargaAsli - hargaDiskon) / hargaAsli) * 100)
+        : 0;
+
+      return `
+        <div
+          data-product-id="${escapeHtmlAttr(p.id)}"
+          class="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md hover:border-Hibualamo transition flex flex-col justify-between cursor-pointer group"
+        >
+          <div>
+            <div class="relative aspect-square bg-slate-100 overflow-hidden">
+              <img
+                src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
+                alt="${escapeHtmlAttr(p.nama)}"
+                referrerpolicy="no-referrer"
+                onerror="this.src='https://placehold.co/400x400/ee4d2d/ffffff?text=Produk'"
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+              >
+              ${diskonPersen > 0 ? `
+                <span class="absolute top-1.5 right-1.5 bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-xs flash-badge">
+                  -${diskonPersen}%
+                </span>
+              ` : ''}
+              <span class="absolute top-1.5 left-1.5 bg-Hibualamo text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-xs">
+                ${escapeHtmlAttr(p.badge || 'Star+')}
+              </span>
+            </div>
+
+            <div class="p-2.5 space-y-1">
+              <h3 class="text-xs font-semibold text-slate-800 line-clamp-2 leading-snug min-h-[2.25rem]">
+                ${escapeHtmlAttr(p.nama)}
+              </h3>
+
+              <div class="pt-0.5">
+                <div class="text-xs sm:text-sm font-extrabold text-Hibualamo leading-none">
+                  ${formatRupiah(hargaDiskon)}
+                </div>
+                ${hargaAsli > hargaDiskon ? `
+                  <div class="text-[10px] text-slate-400 line-through mt-0.5">
+                    ${formatRupiah(hargaAsli)}
+                  </div>
+                ` : '<div class="h-3.5"></div>'}
+              </div>
+            </div>
+          </div>
+
+          <div class="px-2.5 pb-2 pt-1 flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-100">
+            <span class="flex items-center gap-0.5 text-amber-500 font-bold">
+              <i class="fa-solid fa-star text-[9px]"></i> ${Number(p.rating || 5).toFixed(1)}
+            </span>
+            <span>${Number(p.terjual || 0)} terjual</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFlashSale() {
+      const section = document.getElementById('flashSaleSection');
+      const grid = document.getElementById('flashSaleGrid');
+      if (!section || !grid) return;
+
+      const visibleProducts = state.produk.filter(p => isProductVisibleOnWeb(p));
+      let bestSellers = visibleProducts.filter(p => p.isFlashSale);
+      if (bestSellers.length === 0) {
+        bestSellers = [...visibleProducts].sort((a, b) => (Number(b.terjual) || 0) - (Number(a.terjual) || 0)).slice(0, 5);
+      } else {
+        bestSellers.sort((a, b) => (Number(b.terjual) || 0) - (Number(a.terjual) || 0));
+      }
+
+      if (bestSellers.length === 0) {
+        section.classList.add('hidden');
+        grid.innerHTML = '';
+        return;
+      }
+
+      section.classList.remove('hidden');
+      grid.innerHTML = bestSellers.slice(0, 5).map(p => createProductCardHTML(p)).join('');
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('categoryContainer');
+      const subContainer = document.getElementById('subCategoryContainer');
+      if (!container) return;
+
+      const dynamicCats = new Set(['Semua', ...state.kategoriList]);
+      state.produk.forEach(p => {
+        if (isProductVisibleOnWeb(p) && p.kategori) dynamicCats.add(p.kategori);
+      });
+
+      const allCats = Array.from(dynamicCats);
+      container.innerHTML = allCats.map(kat => {
+        const isActive = state.selectedCategory === kat;
+        return `
+          <button
+            type="button"
+            data-category="${escapeHtmlAttr(kat)}"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition shrink-0 cursor-pointer ${
+              isActive
+                ? 'bg-Hibualamo text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }"
+          >
+            ${escapeHtmlAttr(kat)}
+          </button>
+        `;
+      }).join('');
+
+      if (!subContainer) return;
+      if (state.selectedCategory === 'Semua') {
+        subContainer.classList.add('hidden');
+        subContainer.innerHTML = '';
+        return;
+      }
+
+      const subSet = new Set(state.subKategoriMap[state.selectedCategory] || []);
+      state.produk.forEach(p => {
+        if (isProductVisibleOnWeb(p) && p.kategori === state.selectedCategory && p.subKategori) {
+          subSet.add(p.subKategori);
+        }
+      });
+
+      const subList = Array.from(subSet);
+      if (subList.length === 0) {
+        subContainer.classList.add('hidden');
+        subContainer.innerHTML = '';
+        return;
+      }
+
+      subContainer.classList.remove('hidden');
+      const allSubs = ['Semua', ...subList];
+      subContainer.innerHTML = allSubs.map(sub => {
+        const activeSub = state.selectedSubCategory === sub;
+        return `
+          <button
+            type="button"
+            data-subcategory="${escapeHtmlAttr(sub)}"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition shrink-0 cursor-pointer ${
+              activeSub
+                ? 'bg-orange-100 text-Hibualamo border border-Hibualamo/40'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+            }"
+          >
+            ${sub === 'Semua' ? 'Semua ' + escapeHtmlAttr(state.selectedCategory) : escapeHtmlAttr(sub)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderProductCatalog() {
+      const grid = document.getElementById('productGrid');
+      const countText = document.getElementById('catalogCountText');
+      const titleText = document.getElementById('catalogTitleText');
+      const heroCount = document.getElementById('heroProductCount');
+      if (!grid) return;
+
+      const visibleProducts = state.produk.filter(p => isProductVisibleOnWeb(p));
+      if (heroCount) heroCount.textContent = visibleProducts.length;
+
+      let filtered = visibleProducts.filter(p => {
+        const matchCat = state.selectedCategory === 'Semua' || p.kategori === state.selectedCategory;
+        const matchSub = state.selectedSubCategory === 'Semua' || p.subKategori === state.selectedSubCategory;
+        const q = state.searchQuery.toLowerCase().trim();
+        const matchSearch = !q ||
+          p.nama.toLowerCase().includes(q) ||
+          p.kategori.toLowerCase().includes(q) ||
+          (p.deskripsi && p.deskripsi.toLowerCase().includes(q));
+        return matchCat && matchSub && matchSearch;
+      });
+
+      if (state.sortBy === 'termurah') {
+        filtered.sort((a, b) => (Number(a.hargaDiskon) || 0) - (Number(b.hargaDiskon) || 0));
+      } else if (state.sortBy === 'termahal') {
+        filtered.sort((a, b) => (Number(b.hargaDiskon) || 0) - (Number(a.hargaDiskon) || 0));
+      } else if (state.sortBy === 'populer') {
+        filtered.sort((a, b) => (Number(b.terjual) || 0) - (Number(a.terjual) || 0));
+      }
+
+      if (titleText) {
+        titleText.textContent = state.selectedCategory === 'Semua'
+          ? 'Semua Produk'
+          : state.selectedSubCategory !== 'Semua'
+            ? `${state.selectedCategory} — ${state.selectedSubCategory}`
+            : `Kategori: ${state.selectedCategory}`;
+      }
+      if (countText) countText.textContent = `${filtered.length} produk`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white rounded-2xl p-10 text-center border border-slate-200/80 space-y-2">
+            <i class="fa-solid fa-box-open text-3xl text-slate-300"></i>
+            <p class="text-xs sm:text-sm font-bold text-slate-600">Produk tidak ditemukan</p>
+            <p class="text-xs text-slate-400">Coba gunakan kata kunci lain atau pilih kategori Semua.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => createProductCardHTML(p)).join('');
+    }
+
+    function openProductDetailModal(productId) {
+      const p = state.produk.find(x => String(x.id) === String(productId));
+      if (!p || !isProductVisibleOnWeb(p)) return;
+
+      state.activeDetailProduct = p;
+      state.selectedDetailVariant = (Array.isArray(p.varian) && p.varian.length > 0) ? p.varian[0] : 'Standar';
+      state.detailQty = 1;
+
+      const titleEl = document.getElementById('detailModalTitle');
+      if (titleEl) titleEl.textContent = p.nama;
+
+      renderDetailModalContent();
+      openModal('productDetailModal');
+    }
+
+    function renderDetailModalContent() {
+      const p = state.activeDetailProduct;
+      const contentEl = document.getElementById('detailModalContent');
+      if (!p || !contentEl) return;
+
+      const diskonPersen = p.hargaAsli > p.hargaDiskon
+        ? Math.round(((p.hargaAsli - p.hargaDiskon) / p.hargaAsli) * 100)
+        : 0;
+
+      const productReviews = state.ulasan.filter(r => String(r.idProduk) === String(p.id));
+
+      contentEl.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+            <img
+              src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
+              alt="${escapeHtmlAttr(p.nama)}"
+              referrerpolicy="no-referrer"
+              onerror="this.src='https://placehold.co/600x600/ee4d2d/ffffff?text=Produk'"
+              class="w-full h-full object-cover"
+            >
+          </div>
+
+          <div class="space-y-3 flex flex-col justify-between">
+            <div class="space-y-2.5">
+              <div class="flex items-center gap-2">
+                <span class="bg-Hibualamo text-white text-[10px] font-extrabold px-2 py-0.5 rounded">${escapeHtmlAttr(p.badge || 'Star+')}</span>
+                <span class="text-xs text-slate-500">${escapeHtmlAttr(p.kategori)}${p.subKategori ? ' • ' + escapeHtmlAttr(p.subKategori) : ''}</span>
+              </div>
+
+              <h2 class="text-sm sm:text-base font-extrabold text-slate-800 leading-snug">${escapeHtmlAttr(p.nama)}</h2>
+
+              <div class="flex items-center gap-3 text-xs text-slate-500">
+                <span class="text-amber-500 font-bold"><i class="fa-solid fa-star"></i> ${Number(p.rating || 5).toFixed(1)}</span>
+                <span>•</span>
+                <span><strong>${Number(p.terjual || 0)}</strong> Terjual</span>
+                <span>•</span>
+                <span>Stok: <strong>${Number(p.stok || 0)}</strong></span>
+              </div>
+
+              <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-baseline gap-2">
+                <span class="text-lg sm:text-xl font-extrabold text-Hibualamo">${formatRupiah(p.hargaDiskon)}</span>
+                ${p.hargaAsli > p.hargaDiskon ? `
+                  <span class="text-xs text-slate-400 line-through">${formatRupiah(p.hargaAsli)}</span>
+                  <span class="bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded">-${diskonPersen}%</span>
+                ` : ''}
+              </div>
+
+              <!-- PILIH VARIAN -->
+              <div class="space-y-1.5 pt-1">
+                <label class="block text-xs font-bold text-slate-700">Pilih Variasi:</label>
+                <div class="flex flex-wrap gap-1.5">
+                  ${(p.varian || ['Standar']).map(v => `
+                    <button
+                      type="button"
+                      data-detail-variant="${escapeHtmlAttr(v)}"
+                      class="px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                        state.selectedDetailVariant === v
+                          ? 'border-Hibualamo bg-orange-50 text-Hibualamo'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }"
+                    >
+                      ${escapeHtmlAttr(v)}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- JUMLAH -->
+              <div class="flex items-center justify-between pt-2">
+                <span class="text-xs font-bold text-slate-700">Jumlah Beli:</span>
+                <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden">
+                  <button type="button" data-action="detail-qty-dec" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 font-bold text-xs cursor-pointer">-</button>
+                  <span class="px-4 py-1 text-xs font-extrabold">${state.detailQty}</span>
+                  <button type="button" data-action="detail-qty-inc" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 font-bold text-xs cursor-pointer">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-3">
+              <button
+                type="button"
+                data-action="add-detail-to-cart"
+                class="py-2.5 px-3 rounded-xl border-2 border-Hibualamo text-Hibualamo hover:bg-orange-50 font-extrabold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <i class="fa-solid fa-cart-plus"></i> + Keranjang
+              </button>
+              <button
+                type="button"
+                data-action="buy-now-detail"
+                class="py-2.5 px-3 rounded-xl bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                Beli Sekarang
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESKRIPSI -->
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-1.5 text-xs">
+          <h4 class="font-extrabold text-slate-800">Deskripsi Produk</h4>
+          <p class="text-slate-600 whitespace-pre-line leading-relaxed">${escapeHtmlAttr(p.deskripsi || 'Produk berkualitas pilihan Hibualamo Store.')}</p>
+        </div>
+
+        <!-- ULASAN PEMBELI -->
+        <div class="space-y-3 pt-2 border-t border-slate-200 text-xs">
+          <h4 class="font-extrabold text-slate-800">Ulasan Pembeli (${productReviews.length})</h4>
+
+          ${productReviews.length === 0 ? `
+            <p class="text-slate-400 italic">Belum ada ulasan untuk produk ini. Jadilah yang pertama memberikan ulasan!</p>
+          ` : `
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              ${productReviews.map(r => `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800">${escapeHtmlAttr(r.nama)}</span>
+                    <span class="text-amber-500 font-bold">${'★'.repeat(Number(r.rating) || 5)}</span>
+                  </div>
+                  <p class="text-slate-600">${escapeHtmlAttr(r.komentar)}</p>
+                  <div class="text-[10px] text-slate-400">Variasi: ${escapeHtmlAttr(r.varian || 'Standar')} • ${escapeHtmlAttr(r.tanggal || '')}</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+
+          <!-- FORM KIRIM ULASAN -->
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+            <h5 class="font-bold text-slate-700">Tulis Ulasan Anda</h5>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input id="custRevNama" type="text" placeholder="Nama Anda..." class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+              <select id="custRevRating" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-amber-500">
+                <option value="5">⭐⭐⭐⭐⭐ Sangat Puas (5)</option>
+                <option value="4">⭐⭐⭐⭐ Puas (4)</option>
+                <option value="3">⭐⭐⭐ Cukup (3)</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <input id="custRevKomentar" type="text" placeholder="Bagikan pengalaman belanja Anda..." class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+              <button type="button" data-action="submit-customer-review" class="bg-slate-900 hover:bg-Hibualamo text-white font-bold px-3.5 py-1.5 rounded-lg cursor-pointer shrink-0">
+                Kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addToCart(product, variant, qty) {
+      const existingIdx = state.cart.findIndex(item => item.id === product.id && item.varian === variant);
+      if (existingIdx !== -1) {
+        state.cart[existingIdx].qty += qty;
+      } else {
+        state.cart.push({
+          id: product.id,
+          nama: product.nama,
+          harga: Number(product.hargaDiskon) || 0,
+          gambar: product.gambar,
+          varian: variant || 'Standar',
+          qty: Number(qty) || 1
+        });
+      }
+      saveLocalState();
+      updateCartBadges();
+      showToast('Produk ditambahkan ke keranjang!', 'success');
+    }
+
+    function updateCartBadges() {
+      const badge = document.getElementById('cartBadge');
+      const totalItems = state.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+      if (badge) badge.textContent = totalItems;
+    }
+
+    function renderCartModal() {
+      const container = document.getElementById('cartItemsContainer');
+      const formSection = document.getElementById('checkoutFormSection');
+      if (!container) return;
+
+      if (state.cart.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400 space-y-2">
+            <i class="fa-solid fa-cart-arrow-down text-3xl"></i>
+            <p class="font-bold text-slate-600">Keranjang belanja Anda masih kosong</p>
+            <p class="text-[11px]">Yuk pilih produk favorit Anda di katalog!</p>
+          </div>
+        `;
+        if (formSection) formSection.classList.add('hidden');
+        return;
+      }
+
+      if (formSection) formSection.classList.remove('hidden');
+
+      container.innerHTML = state.cart.map((it, idx) => `
+        <div class="flex items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <img
+            src="${escapeHtmlAttr(convertDriveUrl(it.gambar))}"
+            alt="${escapeHtmlAttr(it.nama)}"
+            onerror="this.src='https://placehold.co/100x100/ee4d2d/ffffff?text=Item'"
+            class="w-12 h-12 rounded-lg object-cover shrink-0 border border-slate-200"
+          >
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-slate-800 truncate">${escapeHtmlAttr(it.nama)}</h4>
+            <p class="text-[11px] text-slate-500">Variasi: ${escapeHtmlAttr(it.varian)}</p>
+            <p class="text-xs font-extrabold text-Hibualamo">${formatRupiah(it.harga)}</p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" data-cart-dec="${idx}" class="w-6 h-6 rounded bg-white border border-slate-300 font-bold cursor-pointer">-</button>
+            <span class="w-6 text-center font-bold">${it.qty}</span>
+            <button type="button" data-cart-inc="${idx}" class="w-6 h-6 rounded bg-white border border-slate-300 font-bold cursor-pointer">+</button>
+            <button type="button" data-cart-del="${idx}" class="w-6 h-6 rounded bg-red-50 text-red-600 hover:bg-red-100 ml-1 cursor-pointer">
+              <i class="fa-solid fa-trash-can text-[11px]"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      updateCheckoutSummary();
+    }
+
+    function updateCheckoutSummary() {
+      const subtotal = state.cart.reduce((sum, it) => sum + (Number(it.harga) * Number(it.qty)), 0);
+      const kurirVal = document.getElementById('chkKurir')?.value || 'Kurir Toko Dalam Kota|10000';
+      const [kurirName, ongkirRaw] = kurirVal.split('|');
+      const ongkir = Number(ongkirRaw) || 0;
+      const total = subtotal + ongkir;
+
+      const subEl = document.getElementById('chkSubtotalText');
+      const ongEl = document.getElementById('chkOngkirText');
+      const totEl = document.getElementById('chkTotalText');
+
+      if (subEl) subEl.textContent = formatRupiah(subtotal);
+      if (ongEl) ongEl.textContent = ongkir === 0 ? 'Konfirmasi via WA' : formatRupiah(ongkir);
+      if (totEl) totEl.textContent = formatRupiah(total);
+
+      const metode = document.getElementById('chkMetodeBayar')?.value || 'COD (Bayar di Tempat)';
+      const infoBox = document.getElementById('paymentInfoBox');
+      if (!infoBox) return;
+
+      if (metode === 'Transfer Bank') {
+        infoBox.classList.remove('hidden');
+        infoBox.innerHTML = `
+          <div class="font-bold text-slate-800">Informasi Rekening Transfer:</div>
+          <div class="text-sm font-extrabold text-Hibualamo">${escapeHtmlAttr(state.pengaturanBayar.noRekening || 'Bank Mandiri - 1860000119434')}</div>
+          <div class="text-slate-600">a.n <strong>${escapeHtmlAttr(state.pengaturanBayar.namaPemilikRekening || 'Andri Illa')}</strong></div>
+        `;
+      } else if (metode === 'QRIS') {
+        infoBox.classList.remove('hidden');
+        infoBox.innerHTML = `
+          <div class="font-bold text-slate-800 mb-1">Scan QRIS Hibualamo Store:</div>
+          <img src="${escapeHtmlAttr(convertDriveUrl(state.pengaturanBayar.qrisUrl))}" alt="QRIS" class="w-40 h-40 object-contain rounded-lg border border-slate-300 bg-white p-1">
+        `;
+      } else {
+        infoBox.classList.add('hidden');
+      }
+    }
+
+    async function submitCheckoutOrder() {
+      if (state.cart.length === 0) return;
+
+      const namaPembeli = document.getElementById('chkNama')?.value.trim() || '';
+      const noWa = document.getElementById('chkWa')?.value.trim() || '';
+      const alamat = document.getElementById('chkAlamat')?.value.trim() || '';
+      const catatan = document.getElementById('chkCatatan')?.value.trim() || '-';
+      const kurirVal = document.getElementById('chkKurir')?.value || 'Kurir Toko Dalam Kota|10000';
+      const [kurir, ongkirRaw] = kurirVal.split('|');
+      const metodeBayar = document.getElementById('chkMetodeBayar')?.value || 'COD (Bayar di Tempat)';
+
+      if (!namaPembeli || !noWa || !alamat) {
+        showToast('Mohon lengkapi Nama, Nomor WA, dan Alamat Pengiriman!', 'error');
+        return;
+      }
+
+      const subtotal = state.cart.reduce((sum, it) => sum + (Number(it.harga) * Number(it.qty)), 0);
+      const ongkir = Number(ongkirRaw) || 0;
+      const totalBayar = subtotal + ongkir;
+
+      const payload = {
+        namaPembeli,
+        noWa,
+        alamat,
+        catatan,
+        items: [...state.cart],
+        subtotal,
+        ongkir,
+        totalBayar,
+        kurir,
+        metodeBayar
+      };
+
+      const res = await callServer('createOrder', payload);
+      const savedOrder = res?.order || {
+        idPesanan: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
+        tanggal: new Date().toLocaleString('id-ID'),
+        ...payload,
+        ringkasanItem: state.cart.map(it => `${it.qty}x ${it.nama} (${it.varian})`).join(', '),
+        status: 'Belum Bayar',
+        noResi: '-'
+      };
+
+      state.localOrders.unshift(savedOrder);
+      state.cart = [];
+      saveLocalState();
+      updateCartBadges();
+      closeModal('cartModal');
+      showToast(`Pesanan ${savedOrder.idPesanan} berhasil dibuat!`, 'success');
+
+      let rawWa = String(state.pengaturanBayar.noWaAdmin || '08215075520').replace(/\D/g, '');
+      if (rawWa.startsWith('0')) rawWa = '62' + rawWa.slice(1);
+
+      const itemsLines = savedOrder.items.map(it => `- ${it.qty}x ${it.nama} (${it.varian}): ${formatRupiah(it.harga * it.qty)}`).join('\n');
+      const waText =
+        `Halo Admin *Hibualamo Store*, saya ingin konfirmasi pesanan baru:\n\n` +
+        `*ID Pesanan:* ${savedOrder.idPesanan}\n` +
+        `*Nama:* ${namaPembeli}\n` +
+        `*No. WA:* ${noWa}\n` +
+        `*Alamat:* ${alamat}\n` +
+        `*Kurir:* ${kurir}\n` +
+        `*Pembayaran:* ${metodeBayar}\n\n` +
+        `*Daftar Pesanan:*\n${itemsLines}\n\n` +
+        `*Total Tagihan:* ${formatRupiah(totalBayar)}\n` +
+        `*Catatan:* ${catatan}`;
+
+      window.open(`https://wa.me/${rawWa}?text=${encodeURIComponent(waText)}`, '_blank');
+    }
+
+    async function handleTrackOrder() {
+      const q = document.getElementById('trackOrderInput')?.value.trim() || '';
+      const container = document.getElementById('trackOrderResultContainer');
+      if (!container) return;
+
+      if (!q) {
+        showToast('Masukkan ID Pesanan atau Nomor WA terlebih dahulu!', 'error');
+        return;
+      }
+
+      container.innerHTML = `<p class="text-slate-500">Mencari pesanan...</p>`;
+      const res = await callServer('trackOrder', q);
+      const list = Array.isArray(res?.orders) ? res.orders : [];
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center text-slate-500">
+            Data pesanan tidak ditemukan. Pastikan ID Pesanan atau Nomor WA sudah benar.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(o => `
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+            <span class="font-extrabold text-Hibualamo">${escapeHtmlAttr(o.idPesanan)}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-100 text-Hibualamo">${escapeHtmlAttr(o.status || 'Diproses')}</span>
+          </div>
+          <p><strong>Nama:</strong> ${escapeHtmlAttr(o.namaPembeli)}</p>
+          <p><strong>Pesanan:</strong> ${escapeHtmlAttr(o.ringkasanItem)}</p>
+          <p><strong>Total:</strong> ${formatRupiah(o.totalBayar)} (${escapeHtmlAttr(o.metodeBayar)})</p>
+          <p><strong>No. Resi:</strong> <span class="font-mono font-bold text-slate-800">${escapeHtmlAttr(o.noResi || '-')}</span></p>
+        </div>
+      `).join('');
+    }
+
+    // FITUR KLIK LOGO 10 KALI UNTUK MEMBUKA KOTAK DIALOG PIN ADMIN
+    function handleSecretLogoClick() {
+      state.logoClickCount += 1;
+      if (state.logoClickTimer) clearTimeout(state.logoClickTimer);
+
+      if (state.logoClickCount >= 10) {
+        state.logoClickCount = 0;
+        const pinInput = document.getElementById('adminPinInput');
+        if (pinInput) pinInput.value = '';
+        openModal('adminPinModal');
+        setTimeout(() => pinInput?.focus(), 100);
+        return;
+      }
+
+      state.logoClickTimer = setTimeout(() => {
+        state.logoClickCount = 0;
+      }, 2500);
+    }
+
+    async function verifyAndOpenAdmin() {
+      const inputPin = document.getElementById('adminPinInput')?.value.trim() || '';
+      if (!inputPin) {
+        showToast('Masukkan PIN Admin terlebih dahulu!', 'error');
+        return;
+      }
+
+      const res = await callServer('adminGetOrders', inputPin);
+      if (!res || !res.success) {
+        if (!verifyLocalPin(inputPin)) {
+          showToast(res?.message || 'Password / PIN Admin salah!', 'error');
+          return;
+        }
+      }
+
+      state.verifiedAdminPin = inputPin;
+      closeModal('adminPinModal');
+
+      if (res && res.success) {
+        if (typeof res.hideDummyProducts === 'boolean') state.hideDummyProducts = res.hideDummyProducts;
+        if (Array.isArray(res.lockedProductIds)) {
+          state.lockedProductIds = res.lockedProductIds;
+          if (isRemoteServerConnected()) state.unlockedProductIds = [];
+        }
+        if (Array.isArray(res.orders) && res.orders.length > 0) state.localOrders = res.orders;
+        if (Array.isArray(res.produk) && res.produk.length > 0) {
+          if (isRemoteServerConnected()) {
+            state.produk = res.produk
+              .map((p, i) => normalizeProduct(p, i))
+              .filter(Boolean)
+              .filter(p => !(state.hideDummyProducts && DUMMY_PRODUCT_IDS.includes(p.id)));
+          } else {
+            state.produk = mergeProductsPreservingCustom(res.produk, state.produk);
+          }
+        }
+        if (Array.isArray(res.ulasan) && (isRemoteServerConnected() || res.ulasan.length > 0)) {
+          state.ulasan = res.ulasan.map((r, i) => normalizeReview(r, i)).filter(Boolean);
+        }
+        if (Array.isArray(res.supplier) && res.supplier.length > 0) state.supplier = res.supplier;
+        if (Array.isArray(res.kategoriList) && res.kategoriList.length > 0) state.kategoriList = res.kategoriList;
+        if (res.subKategoriMap) {
+          state.subKategoriMap = isRemoteServerConnected()
+            ? res.subKategoriMap
+            : { ...state.subKategoriMap, ...res.subKategoriMap };
+        }
+        if (res.pengaturanBayar) state.pengaturanBayar = { ...state.pengaturanBayar, ...res.pengaturanBayar };
+        if (res.visitorStats) state.visitorStats = res.visitorStats;
+      }
+
+      saveLocalState();
+      renderAllUI();
+      document.getElementById('adminWorkspace')?.classList.remove('hidden');
+      renderAdminVisitorStats();
+      populateAdminSelects();
+      renderAdminOrders();
+      renderAdminProductList();
+      renderAdminReviewsList();
+      renderAdminSupplierList();
+      renderAdminCategoryList();
+      populateAdminPaymentForm();
+      showToast('Akses Panel Admin berhasil dibuka!', 'success');
+    }
+
+    async function clearDummyProducts() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      state.hideDummyProducts = true;
+      state.produk = state.produk.filter(p => !DUMMY_PRODUCT_IDS.includes(String(p.id)));
+      saveLocalState();
+      renderAllUI();
+      renderAdminProductList();
+      populateAdminSelects();
+      await callServer('adminSetHideDummy', pin, true);
+      showToast('Produk contoh (dummy) berhasil disembunyikan di semua perangkat!', 'info');
+    }
+
+    function renderAdminVisitorStats() {
+      const liveEl = document.getElementById('admLiveVisitorCount');
+      const todayEl = document.getElementById('admTodayVisitorCount');
+      if (liveEl) liveEl.textContent = Math.max(1, Number(state.visitorStats?.onlineCount) || 1);
+      if (todayEl) todayEl.textContent = Math.max(1, Number(state.visitorStats?.todayCount) || 1);
+    }
+
+    function switchAdminTab(tabName) {
+      const tabs = {
+        orders: { btn: 'tabAdminOrders', panel: 'adminOrdersPanel' },
+        addProduct: { btn: 'tabAdminAddProduct', panel: 'adminAddProductPanel' },
+        reviews: { btn: 'tabAdminReviews', panel: 'adminReviewsPanel' },
+        suppliers: { btn: 'tabAdminSuppliers', panel: 'adminSuppliersPanel' },
+        categories: { btn: 'tabAdminCategories', panel: 'adminCategoriesPanel' },
+        payment: { btn: 'tabAdminPayment', panel: 'adminPaymentPanel' },
+        password: { btn: 'tabAdminPassword', panel: 'adminPasswordPanel' }
+      };
+
+      Object.keys(tabs).forEach(key => {
+        const btnEl = document.getElementById(tabs[key].btn);
+        const panelEl = document.getElementById(tabs[key].panel);
+        if (key === tabName) {
+          if (btnEl) btnEl.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-Hibualamo text-white cursor-pointer shrink-0';
+          if (panelEl) panelEl.classList.remove('hidden');
+        } else {
+          if (btnEl) btnEl.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0';
+          if (panelEl) panelEl.classList.add('hidden');
+        }
+      });
+    }
+
+    function populateAdminSelects() {
+      const katSelect = document.getElementById('admProdKategori');
+      const subParentSelect = document.getElementById('admSubParentCat');
+      const supSelect = document.getElementById('admProdSupplier');
+      const revProdSelect = document.getElementById('admRevProduk');
+
+      if (katSelect) {
+        katSelect.innerHTML = state.kategoriList.map(k => `<option value="${escapeHtmlAttr(k)}">${escapeHtmlAttr(k)}</option>`).join('');
+        populateAdminSubCategoryOptions(katSelect.value);
+      }
+
+      if (subParentSelect) {
+        subParentSelect.innerHTML = state.kategoriList.map(k => `<option value="${escapeHtmlAttr(k)}">${escapeHtmlAttr(k)}</option>`).join('');
+        const currentParent = subParentSelect.value;
+        const subInput = document.getElementById('admSubCatInput');
+        if (subInput) {
+          subInput.value = (state.subKategoriMap[currentParent] || []).join(', ');
+        }
+      }
+
+      if (supSelect) {
+        supSelect.innerHTML = `<option value="">-- Pilih Supplier --</option>` +
+          state.supplier.map(s => `<option value="${escapeHtmlAttr(s.idSupplier)}">${escapeHtmlAttr(s.namaSupplier)}</option>`).join('');
+      }
+
+      if (revProdSelect) {
+        revProdSelect.innerHTML = state.produk.map(p => `<option value="${escapeHtmlAttr(p.id)}">${escapeHtmlAttr(p.nama)}</option>`).join('');
+      }
+    }
+
+    function populateAdminSubCategoryOptions(kategoriName, selectedSub = '') {
+      const subSelect = document.getElementById('admProdSubKategori');
+      if (!subSelect) return;
+      const subs = state.subKategoriMap[kategoriName] || [];
+      subSelect.innerHTML = `<option value="">-- Tanpa Sub Kategori --</option>` +
+        subs.map(sc => `<option value="${escapeHtmlAttr(sc)}" ${String(sc) === String(selectedSub) ? 'selected' : ''}>${escapeHtmlAttr(sc)}</option>`).join('');
+    }
+
+    function renderAdminOrders() {
+      const container = document.getElementById('adminOrdersPanel');
+      if (!container) return;
+
+      if (!state.localOrders || state.localOrders.length === 0) {
+        container.innerHTML = `
+          <div class="bg-slate-50 p-8 rounded-xl border border-slate-200 text-center text-xs text-slate-400">
+            <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+            Belum ada pesanan masuk saat ini.
+          </div>
+        `;
+        return;
+      }
+
+      const statuses = ['Belum Bayar', 'Sudah Bayar', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan'];
+
+      container.innerHTML = state.localOrders.map(o => `
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+            <div>
+              <span class="font-extrabold text-Hibualamo text-sm">${escapeHtmlAttr(o.idPesanan)}</span>
+              <span class="text-[11px] text-slate-400 ml-2">${escapeHtmlAttr(o.tanggal || '')}</span>
+            </div>
+            <span class="font-extrabold text-slate-800">${formatRupiah(o.totalBayar)} (${escapeHtmlAttr(o.metodeBayar)})</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600">
+            <div>
+              <p><strong>Pembeli:</strong> ${escapeHtmlAttr(o.namaPembeli)} (${escapeHtmlAttr(o.noWa)})</p>
+              <p><strong>Alamat:</strong> ${escapeHtmlAttr(o.alamat)}</p>
+            </div>
+            <div>
+              <p><strong>Item:</strong> ${escapeHtmlAttr(o.ringkasanItem)}</p>
+              <p><strong>Kurir:</strong> ${escapeHtmlAttr(o.kurir)}</p>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-slate-100">
+            <select id="admOrderStatus_${escapeHtmlAttr(o.idPesanan)}" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-xs">
+              ${statuses.map(st => `<option value="${st}" ${String(o.status) === st ? 'selected' : ''}>${st}</option>`).join('')}
+            </select>
+            <input
+              id="admOrderResi_${escapeHtmlAttr(o.idPesanan)}"
+              type="text"
+              value="${escapeHtmlAttr(o.noResi && o.noResi !== '-' ? o.noResi : '')}"
+              placeholder="Input Nomor Resi Pengiriman..."
+              class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
+            >
+            <button
+              type="button"
+              data-admin-save-order="${escapeHtmlAttr(o.idPesanan)}"
+              class="bg-slate-900 hover:bg-Hibualamo text-white font-bold px-4 py-1.5 rounded-lg cursor-pointer shrink-0"
+            >
+              Update Status
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function adminUpdateOrderStatus(orderId) {
+      const statusEl = document.getElementById(`admOrderStatus_${orderId}`);
+      const resiEl = document.getElementById(`admOrderResi_${orderId}`);
+      const statusBaru = statusEl ? statusEl.value : 'Diproses';
+      const resiBaru = resiEl && resiEl.value.trim() ? resiEl.value.trim() : '-';
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+
+      const res = await callServer('adminUpdateOrder', pin, orderId, statusBaru, resiBaru);
+      if (res && res.success) {
+        const ord = state.localOrders.find(x => String(x.idPesanan) === String(orderId));
+        if (ord) {
+          ord.status = statusBaru;
+          ord.noResi = resiBaru;
+          saveLocalState();
+        }
+        renderAdminOrders();
+        showToast(`Pesanan ${orderId} diperbarui ke ${statusBaru}!`, 'success');
+      }
+    }
+
+    function resetAdminProductForm() {
+      document.getElementById('admProdId').value = '';
+      document.getElementById('admProdNama').value = '';
+      document.getElementById('admProdHargaSupplier').value = '';
+      document.getElementById('admProdHargaDiskon').value = '';
+      document.getElementById('admProdHargaAsli').value = '';
+      document.getElementById('admProdStok').value = '50';
+      document.getElementById('admProdVarian').value = '';
+      document.getElementById('admProdGambar').value = '';
+      document.getElementById('admProdDeskripsi').value = '';
+      document.getElementById('admProdFlash').checked = false;
+      document.getElementById('admImagePreviewWrap')?.classList.add('hidden');
+      document.getElementById('btnCancelEditProduct')?.classList.add('hidden');
+      const title = document.getElementById('formProductTitle');
+      if (title) title.textContent = 'Tambah Produk Baru ke Database';
+    }
+
+    function renderAdminProductList() {
+      const container = document.getElementById('adminProductListContainer');
+      const countEl = document.getElementById('adminProductCount');
+      if (countEl) countEl.textContent = state.produk.length;
+      if (!container) return;
+
+      if (state.produk.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada produk di katalog.</p>`;
+        return;
+      }
+
+      container.innerHTML = state.produk.map(p => {
+        const isLocked = Boolean(p.isLocked || state.lockedProductIds.includes(String(p.id)));
+        return `
+          <div class="bg-white p-3 rounded-xl border ${isLocked ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'} flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-3 min-w-0">
+              <img
+                src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
+                alt="${escapeHtmlAttr(p.nama)}"
+                onerror="this.src='https://placehold.co/80x80/ee4d2d/ffffff?text=Foto'"
+                class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-extrabold text-slate-800 truncate">${escapeHtmlAttr(p.nama)}</span>
+                  ${isLocked ? `<span class="bg-amber-200 text-amber-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Disembunyikan</span>` : ''}
+                </div>
+                <div class="text-slate-500">
+                  ${escapeHtmlAttr(p.kategori)}${p.subKategori ? ' • ' + escapeHtmlAttr(p.subKategori) : ''} |
+                  Jual: <strong class="text-Hibualamo">${formatRupiah(p.hargaDiskon)}</strong> |
+                  Stok: <strong>${p.stok}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-admin-edit-prod="${escapeHtmlAttr(p.id)}"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+              >
+                <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+              </button>
+              <button
+                type="button"
+                data-admin-lock-prod="${escapeHtmlAttr(p.id)}"
+                class="${isLocked ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-800'} font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+              >
+                <i class="fa-solid ${isLocked ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i> ${isLocked ? 'Tampilkan' : 'Sembunyikan'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function adminStartEditProduct(prodId) {
+      const p = state.produk.find(x => String(x.id) === String(prodId));
+      if (!p) return;
+
+      document.getElementById('admProdId').value = p.id;
+      document.getElementById('admProdNama').value = p.nama;
+      document.getElementById('admProdKategori').value = p.kategori;
+      populateAdminSubCategoryOptions(p.kategori, p.subKategori);
+      document.getElementById('admProdSupplier').value = p.idSupplier || '';
+      document.getElementById('admProdHargaSupplier').value = p.hargaSupplier || 0;
+      document.getElementById('admProdHargaAsli').value = p.hargaAsli || p.hargaDiskon || 0;
+      document.getElementById('admProdHargaDiskon').value = p.hargaDiskon || 0;
+      document.getElementById('admProdStok').value = p.stok || 0;
+      document.getElementById('admProdVarian').value = (p.varian || []).join(', ');
+      document.getElementById('admProdGambar').value = p.gambar || '';
+      document.getElementById('admProdDeskripsi').value = p.deskripsi || '';
+      document.getElementById('admProdFlash').checked = Boolean(p.isFlashSale);
+
+      const title = document.getElementById('formProductTitle');
+      if (title) title.textContent = `Edit Produk: ${p.nama}`;
+      document.getElementById('btnCancelEditProduct')?.classList.remove('hidden');
+      document.getElementById('adminAddProductPanel')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function adminSaveProduct() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const editId = document.getElementById('admProdId')?.value.trim() || '';
+      const nama = document.getElementById('admProdNama')?.value.trim() || '';
+      const kategori = document.getElementById('admProdKategori')?.value || 'Elektronik';
+      const subKategori = document.getElementById('admProdSubKategori')?.value || '';
+      const idSupplier = document.getElementById('admProdSupplier')?.value || '';
+      const supObj = state.supplier.find(s => String(s.idSupplier) === String(idSupplier));
+      const namaSupplier = supObj ? supObj.namaSupplier : '-';
+
+      const hargaSupplier = Number(document.getElementById('admProdHargaSupplier')?.value) || 0;
+      const hargaDiskon = Number(document.getElementById('admProdHargaDiskon')?.value) || 0;
+      const hargaAsli = Number(document.getElementById('admProdHargaAsli')?.value) || hargaDiskon;
+      const stok = Number(document.getElementById('admProdStok')?.value) || 20;
+      const varianRaw = document.getElementById('admProdVarian')?.value.trim() || 'Standar';
+      const gambar = document.getElementById('admProdGambar')?.value.trim() || 'https://placehold.co/400x400/ee4d2d/ffffff?text=Produk';
+      const deskripsi = document.getElementById('admProdDeskripsi')?.value.trim() || '';
+      const isFlashSale = Boolean(document.getElementById('admProdFlash')?.checked);
+
+      if (!nama || hargaDiskon <= 0) {
+        showToast('Nama produk dan Harga Jual wajib diisi!', 'error');
+        return;
+      }
+
+      const existingProd = editId ? state.produk.find(x => String(x.id) === String(editId)) : null;
+      const isCurrentlyLocked = existingProd ? Boolean(existingProd.isLocked) : false;
+
+      const payloadProd = {
+        id: editId,
+        nama,
+        kategori,
+        subKategori,
+        hargaSupplier,
+        hargaAsli,
+        hargaDiskon,
+        stok,
+        varian: varianRaw.split(',').map(v => v.trim()).filter(Boolean),
+        gambar,
+        deskripsi,
+        isFlashSale,
+        idSupplier,
+        namaSupplier,
+        isLocked: isCurrentlyLocked
+      };
+
+      const res = await callServer('adminSaveProduct', pin, payloadProd);
+      const finalId = (res && res.id) ? res.id : (editId || ('PRD-' + Math.floor(100 + Math.random() * 900)));
+      const newProdObj = normalizeProduct({
+        ...payloadProd,
+        id: finalId,
+        terjual: existingProd ? existingProd.terjual : 0,
+        rating: existingProd ? existingProd.rating : 5.0,
+        badge: existingProd ? existingProd.badge : 'Star+'
+      });
+
+      if (newProdObj) {
+        const existingIdx = state.produk.findIndex(x => String(x.id) === String(finalId));
+        if (existingIdx !== -1) {
+          state.produk[existingIdx] = newProdObj;
+        } else {
+          state.produk.unshift(newProdObj);
+        }
+      }
+
+      saveLocalState();
+      renderAllUI();
+      renderAdminProductList();
+      populateAdminSelects();
+      resetAdminProductForm();
+      showToast('Produk berhasil disimpan ke database!', 'success');
+    }
+
+    async function adminToggleLockProduct(prodId) {
+      const p = state.produk.find(x => String(x.id) === String(prodId));
+      if (!p) return;
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const newLockState = !Boolean(p.isLocked || state.lockedProductIds.includes(String(p.id)));
+      p.isLocked = newLockState;
+
+      if (newLockState) {
+        if (!state.lockedProductIds.includes(p.id)) state.lockedProductIds.push(p.id);
+      } else {
+        state.lockedProductIds = state.lockedProductIds.filter(id => id !== p.id);
+        if (!state.unlockedProductIds.includes(p.id)) state.unlockedProductIds.push(p.id);
+      }
+
+      await callServer('adminToggleProductLock', pin, p.id, newLockState);
+      saveLocalState();
+      renderAllUI();
+      renderAdminProductList();
+      showToast(newLockState ? 'Produk disembunyikan dari katalog web.' : 'Produk ditampilkan kembali di katalog web.', 'info');
+    }
+
+    // KELOLA ULASAN DI ADMIN
+    function renderAdminReviewsList() {
+      const container = document.getElementById('adminReviewListContainer');
+      const countEl = document.getElementById('adminReviewTotalCount');
+      if (countEl) countEl.textContent = state.ulasan.length;
+      if (!container) return;
+
+      if (state.ulasan.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic py-3">Belum ada data ulasan.</p>`;
+        return;
+      }
+
+      container.innerHTML = state.ulasan.map(r => {
+        const rid = String(r.id).trim();
+        const prod = state.produk.find(p => String(p.id) === String(r.idProduk));
+        const prodName = prod ? prod.nama : r.idProduk;
+
+        return `
+          <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-extrabold text-slate-800">${escapeHtmlAttr(r.nama)}</span>
+                <span class="text-amber-500 font-bold">${'★'.repeat(Number(r.rating) || 5)}</span>
+                <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">${escapeHtmlAttr(prodName)} (${escapeHtmlAttr(r.varian || 'Standar')})</span>
+              </div>
+              <p class="text-slate-600">${escapeHtmlAttr(r.komentar)}</p>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" data-admin-del-rev="${escapeHtmlAttr(rid)}" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer">
+                Hapus
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function adminSaveReview() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const id = document.getElementById('admRevId')?.value.trim() || '';
+      const idProduk = document.getElementById('admRevProduk')?.value || (state.produk[0]?.id || 'PRD-001');
+      const nama = document.getElementById('admRevNama')?.value.trim() || '';
+      const rating = Number(document.getElementById('admRevRating')?.value) || 5;
+      const varian = document.getElementById('admRevVarian')?.value.trim() || 'Standar';
+      const komentar = document.getElementById('admRevKomentar')?.value.trim() || '';
+
+      if (!nama || !komentar) {
+        showToast('Nama pembeli dan komentar ulasan wajib diisi!', 'error');
+        return;
+      }
+
+      const payload = { id, idProduk, nama, rating, varian, komentar };
+      const res = await callServer('adminSaveReview', pin, payload);
+      const savedRev = normalizeReview(res?.review || {
+        ...payload,
+        id: id || ('REV-' + Math.floor(1000 + Math.random() * 9000)),
+        tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+      });
+
+      if (savedRev) {
+        state.ulasan.unshift(savedRev);
+      }
+
+      saveLocalState();
+      document.getElementById('admRevNama').value = '';
+      document.getElementById('admRevKomentar').value = '';
+      renderAdminReviewsList();
+      showToast('Ulasan produk berhasil disimpan!', 'success');
+    }
+
+    async function adminDeleteReview(revId) {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      await callServer('adminDeleteReview', pin, revId);
+      state.ulasan = state.ulasan.filter(r => String(r.id) !== String(revId));
+      saveLocalState();
+      renderAdminReviewsList();
+      showToast('Ulasan berhasil dihapus.', 'info');
+    }
+
+    // KELOLA SUPPLIER DI ADMIN
+    function renderAdminSupplierList() {
+      const container = document.getElementById('adminSupplierListContainer');
+      if (!container) return;
+
+      if (state.supplier.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada data supplier.</p>`;
+        return;
+      }
+
+      container.innerHTML = state.supplier.map(s => `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div>
+            <div class="font-extrabold text-slate-800">${escapeHtmlAttr(s.namaSupplier)} <span class="text-[10px] font-semibold bg-slate-100 px-2 py-0.5 rounded ml-1">${escapeHtmlAttr(s.jenisSupplier || '-')}</span></div>
+            <div class="text-slate-500">${escapeHtmlAttr(s.alamat || '-')} • Kontak: ${escapeHtmlAttr(s.kontakPerson || '-')}</div>
+          </div>
+          <button type="button" data-admin-del-sup="${escapeHtmlAttr(s.idSupplier)}" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg cursor-pointer shrink-0">
+            Hapus
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function adminSaveSupplier() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const namaSupplier = document.getElementById('admSupNama')?.value.trim() || '';
+      const jenisSupplier = document.getElementById('admSupJenis')?.value.trim() || 'Distributor';
+      const alamat = document.getElementById('admSupAlamat')?.value.trim() || '-';
+      const kontakPerson = document.getElementById('admSupKontak')?.value.trim() || '-';
+
+      if (!namaSupplier) {
+        showToast('Nama Supplier wajib diisi!', 'error');
+        return;
+      }
+
+      const newSup = {
+        idSupplier: 'SUP-' + Math.floor(100 + Math.random() * 900),
+        namaSupplier,
+        jenisSupplier,
+        alamat,
+        kontakPerson
+      };
+
+      await callServer('adminSaveSupplier', pin, newSup);
+      state.supplier.push(newSup);
+      saveLocalState();
+
+      document.getElementById('admSupNama').value = '';
+      document.getElementById('admSupJenis').value = '';
+      document.getElementById('admSupAlamat').value = '';
+      document.getElementById('admSupKontak').value = '';
+
+      renderAdminSupplierList();
+      populateAdminSelects();
+      showToast('Data supplier berhasil ditambahkan!', 'success');
+    }
+
+    async function adminDeleteSupplier(supId) {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      await callServer('adminDeleteSupplier', pin, supId);
+      state.supplier = state.supplier.filter(s => String(s.idSupplier) !== String(supId));
+      saveLocalState();
+      renderAdminSupplierList();
+      populateAdminSelects();
+      showToast('Data supplier dihapus.', 'info');
+    }
+
+    // KELOLA KATEGORI & SUB-KATEGORI
+    function renderAdminCategoryList() {
+      const container = document.getElementById('adminCategoryListContainer');
+      if (!container) return;
+
+      container.innerHTML = state.kategoriList.map(k => `
+        <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
+          <div>
+            <span class="font-bold text-slate-800">${escapeHtmlAttr(k)}</span>
+            <span class="text-[11px] text-slate-400 ml-2">${(state.subKategoriMap[k] || []).join(', ') || 'Tanpa sub-kategori'}</span>
+          </div>
+          <button type="button" data-admin-del-cat="${escapeHtmlAttr(k)}" class="text-red-600 hover:underline font-bold text-[11px] cursor-pointer">
+            Hapus
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function adminAddCategory() {
+      const input = document.getElementById('admNewCategoryName');
+      const namaKat = input?.value.trim() || '';
+      if (!namaKat) return;
+
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      await callServer('adminAddCategory', pin, namaKat);
+      if (!state.kategoriList.includes(namaKat)) {
+        state.kategoriList.push(namaKat);
+      }
+      if (input) input.value = '';
+      saveLocalState();
+      renderAllUI();
+      renderAdminCategoryList();
+      populateAdminSelects();
+      showToast(`Kategori "${namaKat}" berhasil ditambahkan!`, 'success');
+    }
+
+    async function adminDeleteCategory(namaKat) {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      await callServer('adminDeleteCategory', pin, namaKat);
+      state.kategoriList = state.kategoriList.filter(k => k !== namaKat);
+      saveLocalState();
+      renderAllUI();
+      renderAdminCategoryList();
+      populateAdminSelects();
+      showToast(`Kategori "${namaKat}" dihapus.`, 'info');
+    }
+
+    async function adminSaveSubCategories() {
+      const parentCat = document.getElementById('admSubParentCat')?.value || '';
+      const rawSubs = document.getElementById('admSubCatInput')?.value || '';
+      if (!parentCat) return;
+
+      const subs = rawSubs.split(',').map(s => s.trim()).filter(Boolean);
+      state.subKategoriMap[parentCat] = subs;
+
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
+      saveLocalState();
+      renderAllUI();
+      renderAdminCategoryList();
+      populateAdminSelects();
+      showToast(`Sub-kategori untuk ${parentCat} berhasil disimpan!`, 'success');
+    }
+
+    function populateAdminPaymentForm() {
+      const p = state.pengaturanBayar || {};
+      const gasEl = document.getElementById('admGasApiUrl');
+      if (gasEl) gasEl.value = getActiveGasApiUrl();
+      const logoEl = document.getElementById('admPayLogoUrl');
+      if (logoEl) logoEl.value = p.logoUrl || '';
+      const qrisEl = document.getElementById('admPayQrisUrl');
+      if (qrisEl) qrisEl.value = p.qrisUrl || '';
+      const rekEl = document.getElementById('admPayNoRek');
+      if (rekEl) rekEl.value = p.noRekening || '';
+      const namaRekEl = document.getElementById('admPayNamaRek');
+      if (namaRekEl) namaRekEl.value = p.namaPemilikRekening || '';
+      const waEl = document.getElementById('admPayWaAdmin');
+      if (waEl) waEl.value = p.noWaAdmin || '';
+      const gmailEl = document.getElementById('admPayGmail');
+      if (gmailEl) gmailEl.value = p.gmailPemilik || '';
+    }
+
+    async function adminSavePaymentSettings() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const newSettings = {
+        logoUrl: document.getElementById('admPayLogoUrl')?.value.trim() || '',
+        qrisUrl: document.getElementById('admPayQrisUrl')?.value.trim() || '',
+        noRekening: document.getElementById('admPayNoRek')?.value.trim() || '',
+        namaPemilikRekening: document.getElementById('admPayNamaRek')?.value.trim() || '',
+        noWaAdmin: document.getElementById('admPayWaAdmin')?.value.trim() || '',
+        gmailPemilik: document.getElementById('admPayGmail')?.value.trim() || ''
+      };
+
+      await callServer('adminSavePaymentSettings', pin, newSettings);
+      state.pengaturanBayar = { ...state.pengaturanBayar, ...newSettings };
+      saveLocalState();
+      renderHeaderLogo();
+      showToast('Pengaturan toko & pembayaran berhasil disimpan!', 'success');
+    }
+
+    async function adminSyncGasUrl() {
+      const url = document.getElementById('admGasApiUrl')?.value.trim() || '';
+      if (!url || !url.startsWith('https://script.google.com/')) {
+        showToast('Masukkan URL Web App Google Apps Script yang valid!', 'error');
+        return;
+      }
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const localCustomProducts = state.produk.filter(p => !DUMMY_PRODUCT_IDS.includes(String(p.id)));
+
+      state.savedGasApiUrl = url;
+      saveLocalState();
+      showToast('Menghubungkan & menyinkronkan data ke Google Sheets...', 'info');
+
+      try {
+        if (state.hideDummyProducts) {
+          await callServer('adminSetHideDummy', pin, true);
+        }
+        for (const prod of localCustomProducts) {
+          await callServer('adminSaveProduct', pin, prod);
+        }
+        if (state.subKategoriMap && Object.keys(state.subKategoriMap).length > 0) {
+          await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
+        }
+      } catch (e) {}
+
+      await initStoreData();
+      renderAdminProductList();
+      renderAdminCategoryList();
+      populateAdminSelects();
+      showToast('Sinkronisasi Google Apps Script selesai!', 'success');
+    }
+
+    async function adminChangePin() {
+      const oldPin = document.getElementById('admOldPin')?.value.trim() || '';
+      const newPin = document.getElementById('admNewPin')?.value.trim() || '';
+      if (!oldPin || !newPin) {
+        showToast('Masukkan PIN lama dan PIN baru!', 'error');
+        return;
+      }
+      const res = await callServer('adminChangePassword', oldPin, newPin);
+      if (res && res.success) {
+        state.localAdminPin = newPin;
+        state.verifiedAdminPin = newPin;
+        saveLocalState();
+        document.getElementById('admOldPin').value = '';
+        document.getElementById('admNewPin').value = '';
+        showToast('PIN Admin berhasil diperbarui!', 'success');
+      } else {
+        showToast(res?.message || 'PIN lama tidak sesuai!', 'error');
+      }
+    }
+
+    // KAMERA & UPLOAD FOTO PRODUK
+    async function openAdminCamera() {
+      try {
+        if (activeCameraStream) {
+          activeCameraStream.getTracks().forEach(t => t.stop());
+        }
+        activeCameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: currentCameraFacingMode },
+          audio: false
+        });
+        const videoEl = document.getElementById('cameraVideoEl');
+        if (videoEl) videoEl.srcObject = activeCameraStream;
+        openModal('cameraModal');
+      } catch (e) {
+        showToast('Tidak dapat mengakses kamera perangkat.', 'error');
+      }
+    }
+
+    function closeAdminCamera() {
+      if (activeCameraStream) {
+        activeCameraStream.getTracks().forEach(t => t.stop());
+        activeCameraStream = null;
+      }
+      closeModal('cameraModal');
+    }
+
+    async function captureAdminPhoto() {
+      const videoEl = document.getElementById('cameraVideoEl');
+      if (!videoEl) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      const base64Data = canvas.toDataURL('image/jpeg', 0.82);
+      closeAdminCamera();
+      await processUploadedImageBase64(base64Data, 'camera_' + Date.now() + '.jpg');
+    }
+
+    async function processUploadedImageBase64(base64Data, fileName) {
+      const inputEl = document.getElementById('admProdGambar');
+      const previewWrap = document.getElementById('admImagePreviewWrap');
+      const previewImg = document.getElementById('admImagePreview');
+
+      if (inputEl) inputEl.value = base64Data;
+      if (previewImg) previewImg.src = base64Data;
+      if (previewWrap) previewWrap.classList.remove('hidden');
+
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const res = await callServer('adminUploadImageToDrive', pin, base64Data, fileName, 'image/jpeg');
+      if (res && res.success && res.url) {
+        if (inputEl) inputEl.value = res.url;
+        showToast('Foto produk siap digunakan!', 'success');
+      }
+    }
+
+    // LIVE CHAT WIDGET
+    function renderLiveChat() {
+      const container = document.getElementById('liveChatMessagesContainer');
+      if (!container) return;
+      container.innerHTML = state.liveChatMessages.map(m => `
+        <div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}">
+          <div class="${m.sender === 'user' ? 'bg-Hibualamo text-white' : 'bg-white border border-slate-200 text-slate-700'} px-3 py-2 rounded-xl max-w-[85%]">
+            <p>${escapeHtmlAttr(m.text)}</p>
+          </div>
+        </div>
+      `).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function sendLiveChatMessage() {
+      const input = document.getElementById('liveChatInput');
+      const text = input?.value.trim() || '';
+      if (!text) return;
+      state.liveChatMessages.push({ sender: 'user', text, time: 'Baru saja' });
+      input.value = '';
+      renderLiveChat();
+
+      setTimeout(() => {
+        state.liveChatMessages.push({
+          sender: 'bot',
+          text: 'Terima kasih kak! Untuk respon instan via WhatsApp, silakan klik tombol Checkout atau hubungi nomor WA Admin kami: ' + (state.pengaturanBayar.noWaAdmin || '08215075520'),
+          time: 'Baru saja'
+        });
+        renderLiveChat();
+      }, 600);
+    }
+
+    // EVENT LISTENERS TERPUSAT
+    document.addEventListener('DOMContentLoaded', () => {
+      loadLocalState();
+      initStoreData();
+      initVisitorTracking();
+      renderLiveChat();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && isRemoteServerConnected()) {
+          initStoreData();
+        }
+      });
+
+      document.getElementById('searchInput')?.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value || '';
+        renderProductCatalog();
+      });
+
+      document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+        state.sortBy = e.target.value || 'populer';
+        renderProductCatalog();
+      });
+
+      document.getElementById('chkKurir')?.addEventListener('change', updateCheckoutSummary);
+      document.getElementById('chkMetodeBayar')?.addEventListener('change', updateCheckoutSummary);
+
+      document.getElementById('admProdKategori')?.addEventListener('change', (e) => {
+        populateAdminSubCategoryOptions(e.target.value);
+      });
+
+      document.getElementById('admSubParentCat')?.addEventListener('change', (e) => {
+        const subInput = document.getElementById('admSubCatInput');
+        if (subInput) {
+          subInput.value = (state.subKategoriMap[e.target.value] || []).join(', ');
+        }
+      });
+
+      document.getElementById('admProdFileInput')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          processUploadedImageBase64(ev.target.result, file.name);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById('adminPinInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') verifyAndOpenAdmin();
+      });
+
+      document.body.addEventListener('click', async (e) => {
+        if (e.target.closest('[data-action="logo-secret-admin"]')) {
+          handleSecretLogoClick();
+          return;
+        }
+
+        const closeModalBtn = e.target.closest('[data-close-modal]');
+        if (closeModalBtn) {
+          closeModal(closeModalBtn.getAttribute('data-close-modal'));
+          return;
+        }
+
+        const prodCard = e.target.closest('[data-product-id]');
+        if (prodCard) {
+          openProductDetailModal(prodCard.getAttribute('data-product-id'));
+          return;
+        }
+
+        const catBtn = e.target.closest('[data-category]');
+        if (catBtn) {
+          state.selectedCategory = catBtn.getAttribute('data-category');
+          state.selectedSubCategory = 'Semua';
+          renderCategories();
+          renderProductCatalog();
+          return;
+        }
+
+        const subCatBtn = e.target.closest('[data-subcategory]');
+        if (subCatBtn) {
+          state.selectedSubCategory = subCatBtn.getAttribute('data-subcategory');
+          renderCategories();
+          renderProductCatalog();
+          return;
+        }
+
+        const varBtn = e.target.closest('[data-detail-variant]');
+        if (varBtn) {
+          state.selectedDetailVariant = varBtn.getAttribute('data-detail-variant');
+          renderDetailModalContent();
+          return;
+        }
+
+        const cartInc = e.target.closest('[data-cart-inc]');
+        if (cartInc) {
+          const idx = Number(cartInc.getAttribute('data-cart-inc'));
+          if (state.cart[idx]) state.cart[idx].qty += 1;
+          saveLocalState();
+          updateCartBadges();
+          renderCartModal();
+          return;
+        }
+
+        const cartDec = e.target.closest('[data-cart-dec]');
+        if (cartDec) {
+          const idx = Number(cartDec.getAttribute('data-cart-dec'));
+          if (state.cart[idx]) {
+            state.cart[idx].qty = Math.max(1, state.cart[idx].qty - 1);
+          }
+          saveLocalState();
+          updateCartBadges();
+          renderCartModal();
+          return;
+        }
+
+        const cartDel = e.target.closest('[data-cart-del]');
+        if (cartDel) {
+          const idx = Number(cartDel.getAttribute('data-cart-del'));
+          state.cart.splice(idx, 1);
+          saveLocalState();
+          updateCartBadges();
+          renderCartModal();
+          return;
+        }
+
+        const admTabBtn = e.target.closest('[data-admin-tab]');
+        if (admTabBtn) {
+          switchAdminTab(admTabBtn.getAttribute('data-admin-tab'));
+          return;
+        }
+
+        const saveOrderBtn = e.target.closest('[data-admin-save-order]');
+        if (saveOrderBtn) {
+          adminUpdateOrderStatus(saveOrderBtn.getAttribute('data-admin-save-order'));
+          return;
+        }
+
+        const editProdBtn = e.target.closest('[data-admin-edit-prod]');
+        if (editProdBtn) {
+          adminStartEditProduct(editProdBtn.getAttribute('data-admin-edit-prod'));
+          return;
+        }
+
+        const lockProdBtn = e.target.closest('[data-admin-lock-prod]');
+        if (lockProdBtn) {
+          adminToggleLockProduct(lockProdBtn.getAttribute('data-admin-lock-prod'));
+          return;
+        }
+
+        const delRevBtn = e.target.closest('[data-admin-del-rev]');
+        if (delRevBtn) {
+          adminDeleteReview(delRevBtn.getAttribute('data-admin-del-rev'));
+          return;
+        }
+
+        const delSupBtn = e.target.closest('[data-admin-del-sup]');
+        if (delSupBtn) {
+          adminDeleteSupplier(delSupBtn.getAttribute('data-admin-del-sup'));
+          return;
+        }
+
+        const delCatBtn = e.target.closest('[data-admin-del-cat]');
+        if (delCatBtn) {
+          adminDeleteCategory(delCatBtn.getAttribute('data-admin-del-cat'));
+          return;
+        }
+
+        const actionEl = e.target.closest('[data-action]');
+        if (!actionEl) return;
+        const action = actionEl.getAttribute('data-action');
+
+        switch (action) {
+          case 'open-cart-modal':
+            renderCartModal();
+            openModal('cartModal');
+            break;
+          case 'open-track-modal':
+            openModal('trackOrderModal');
+            break;
+          case 'submit-track-order':
+            handleTrackOrder();
+            break;
+          case 'detail-qty-inc':
+            state.detailQty += 1;
+            renderDetailModalContent();
+            break;
+          case 'detail-qty-dec':
+            state.detailQty = Math.max(1, state.detailQty - 1);
+            renderDetailModalContent();
+            break;
+          case 'add-detail-to-cart':
+            if (state.activeDetailProduct) {
+              addToCart(state.activeDetailProduct, state.selectedDetailVariant, state.detailQty);
+              closeModal('productDetailModal');
+            }
+            break;
+          case 'buy-now-detail':
+            if (state.activeDetailProduct) {
+              addToCart(state.activeDetailProduct, state.selectedDetailVariant, state.detailQty);
+              closeModal('productDetailModal');
+              renderCartModal();
+              openModal('cartModal');
+            }
+            break;
+          case 'submit-customer-review': {
+            const p = state.activeDetailProduct;
+            if (!p) break;
+            const namaPembeli = document.getElementById('custRevNama')?.value.trim() || 'Pembeli Hibualamo';
+            const rating = Number(document.getElementById('custRevRating')?.value) || 5;
+            const komentar = document.getElementById('custRevKomentar')?.value.trim() || '';
+            if (!komentar) {
+              showToast('Tulis komentar ulasan Anda terlebih dahulu!', 'error');
+              break;
+            }
+            const res = await callServer('submitReview', {
+              idProduk: p.id,
+              namaPembeli,
+              rating,
+              komentar,
+              varian: state.selectedDetailVariant
+            });
+            if (res && res.review) {
+              state.ulasan.unshift(normalizeReview(res.review));
+              saveLocalState();
+              renderDetailModalContent();
+              showToast('Terima kasih atas ulasan Anda!', 'success');
+            }
+            break;
+          }
+          case 'submit-checkout':
+            submitCheckoutOrder();
+            break;
+          case 'verify-admin-pin':
+            verifyAndOpenAdmin();
+            break;
+          case 'close-admin-workspace':
+            document.getElementById('adminWorkspace')?.classList.add('hidden');
+            break;
+          case 'admin-refresh-visitor':
+            refreshAdminVisitorStats();
+            break;
+          case 'admin-save-product':
+            adminSaveProduct();
+            break;
+          case 'admin-cancel-edit-product':
+            resetAdminProductForm();
+            break;
+          case 'admin-clear-dummy':
+            clearDummyProducts();
+            break;
+          case 'admin-add-category':
+            adminAddCategory();
+            break;
+          case 'admin-save-subcategories':
+            adminSaveSubCategories();
+            break;
+          case 'admin-save-review':
+            adminSaveReview();
+            break;
+          case 'admin-save-supplier':
+            adminSaveSupplier();
+            break;
+          case 'admin-save-payment':
+            adminSavePaymentSettings();
+            break;
+          case 'admin-sync-gas-url':
+            adminSyncGasUrl();
+            break;
+          case 'admin-change-pin':
+            adminChangePin();
+            break;
+          case 'admin-open-camera':
+            openAdminCamera();
+            break;
+          case 'admin-close-camera':
+            closeAdminCamera();
+            break;
+          case 'admin-switch-camera':
+            currentCameraFacingMode = currentCameraFacingMode === 'environment' ? 'user' : 'environment';
+            openAdminCamera();
+            break;
+          case 'admin-capture-photo':
+            captureAdminPhoto();
+            break;
+          case 'toggle-live-chat':
+            document.getElementById('liveChatBox')?.classList.toggle('hidden');
+            break;
+          case 'send-live-chat':
+            sendLiveChatMessage();
+            break;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

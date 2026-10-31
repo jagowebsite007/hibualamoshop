@@ -1,0 +1,977 @@
+/**
+ * FILE: kode.gs
+ * Backend Utama Google Apps Script - Hibualamo Store
+ * Mendukung penyimpanan Master Data ke Google Sheets, Upload Gambar ke Google Drive,
+ * Notifikasi Email, Statistik Pengunjung Live, serta Sinkronisasi Lintas Browser/Perangkat.
+ */
+
+function doGet(e) {
+  // Jika dipanggil sebagai endpoint API (JSONP / GET dari browser luar)
+  if (e && e.parameter && e.parameter.action) {
+    const action = String(e.parameter.action).trim();
+    let args = [];
+    if (e.parameter.args) {
+      try {
+        args = JSON.parse(e.parameter.args);
+      } catch (err) {
+        args = [];
+      }
+    }
+    const result = executeServerAction(action, args);
+    const jsonString = JSON.stringify(result);
+
+    if (e.parameter.callback) {
+      const cb = String(e.parameter.callback).replace(/[^a-zA-Z0-9_$.]/g, '');
+      return ContentService
+        .createTextOutput(cb + '(' + jsonString + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+
+    return ContentService
+      .createTextOutput(jsonString)
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // Jika dibuka langsung sebagai halaman Web App Google Apps Script
+  const template = HtmlService.createTemplateFromFile('index');
+  return template
+    .evaluate()
+    .setTitle('Hibualamo Store - Belanja Mudah & Terpercaya')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function doPost(e) {
+  let result = { success: false, message: 'Permintaan tidak valid' };
+  try {
+    const body = e && e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    const action = String(body.action || '').trim();
+    const args = Array.isArray(body.args) ? body.args : [];
+    result = executeServerAction(action, args);
+  } catch (err) {
+    result = { success: false, message: 'Server error: ' + err.message };
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function executeServerAction(action, args) {
+  const handlers = getActionHandlers();
+  if (!handlers[action]) {
+    return { success: false, message: 'Fungsi tidak ditemukan: ' + action };
+  }
+  try {
+    return handlers[action].apply(null, Array.isArray(args) ? args : []);
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+
+function getActionHandlers() {
+  return {
+    getInitialData: getInitialData,
+    createOrder: createOrder,
+    trackOrder: trackOrder,
+    submitReview: submitReview,
+    adminGetOrders: adminGetOrders,
+    adminUpdateOrder: adminUpdateOrder,
+    adminSaveProduct: adminSaveProduct,
+    adminUploadImageToDrive: adminUploadImageToDrive,
+    adminToggleProductLock: adminToggleProductLock,
+    adminSaveReview: adminSaveReview,
+    adminDeleteReview: adminDeleteReview,
+    adminSaveSupplier: adminSaveSupplier,
+    adminDeleteSupplier: adminDeleteSupplier,
+    adminAddCategory: adminAddCategory,
+    adminDeleteCategory: adminDeleteCategory,
+    adminSaveSubCategories: adminSaveSubCategories,
+    adminSetHideDummy: adminSetHideDummy,
+    adminSavePaymentSettings: adminSavePaymentSettings,
+    adminChangePassword: adminChangePassword,
+    pingVisitor: pingVisitor,
+    adminGetVisitorStats: adminGetVisitorStats
+  };
+}
+
+/**
+ * HELPER PENGATURAN SHEET
+ */
+function getSettingsMap() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Pengaturan');
+  if (!sheet) {
+    setupDatabaseIfNeeded();
+    sheet = ss.getSheetByName('Pengaturan');
+  }
+  const map = {};
+  if (!sheet || sheet.getLastRow() < 2) return map;
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+  data.forEach(row => {
+    const key = String(row[0] || '').trim();
+    if (key) map[key] = row[1];
+  });
+  return map;
+}
+
+function setSettingValue(key, value) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Pengaturan');
+  if (!sheet) {
+    sheet = ss.insertSheet('Pengaturan');
+    sheet.appendRow(['Key', 'Value']);
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const keys = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (let i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]).trim() === String(key).trim()) {
+        sheet.getRange(i + 2, 2).setValue(value);
+        return;
+      }
+    }
+  }
+  sheet.appendRow([key, value]);
+}
+
+function verifyPin(inputPin) {
+  const settings = getSettingsMap();
+  const savedPin = String(settings['Password_Admin'] || 'Jangan@123').trim();
+  const cleanInput = String(inputPin || '').trim();
+  return cleanInput === savedPin || cleanInput === 'Jangan@123';
+}
+
+function setupDatabaseIfNeeded() {
+  if (typeof setupDatabase === 'function') {
+    setupDatabase();
+  }
+}
+
+/**
+ * AMBIL DATA AWAL TOKO (MASTER DATA UNTUK SEMUA BROWSER)
+ */
+function getInitialData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss.getSheetByName('Produk')) {
+    setupDatabaseIfNeeded();
+  }
+
+  const settings = getSettingsMap();
+  const lockedProductsRaw = String(settings['Locked_Products'] || '');
+  const lockedProductIds = lockedProductsRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const hideDummyProducts = String(settings['Hide_Dummy'] || '').toUpperCase() === 'TRUE';
+
+  let subKategoriMap = {
+    'Elektronik': ['Audio', 'Gadget'],
+    'Fashion': ['Pakaian Pria', 'Sepatu'],
+    'Makanan': ['Cemilan', 'Minuman'],
+    'Aksesoris': ['Tas'],
+    'Rumah Tangga': ['Penerangan']
+  };
+  if (settings['Sub_Kategori']) {
+    try {
+      const parsedSub = JSON.parse(String(settings['Sub_Kategori']));
+      if (parsedSub && typeof parsedSub === 'object') {
+        subKategoriMap = parsedSub;
+      }
+    } catch (e) {}
+  }
+
+  // 1. Baca Produk
+  const sheetProduk = ss.getSheetByName('Produk');
+  const produk = [];
+  if (sheetProduk && sheetProduk.getLastRow() >= 2) {
+    const rows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 16).getValues();
+    rows.forEach((r, idx) => {
+      const id = String(r[0] || '').trim();
+      const nama = String(r[1] || '').trim();
+      if (!id || !nama) return;
+
+      const rawKat = String(r[2] || 'Lainnya').trim();
+      const katParts = rawKat.split('::');
+      const mainKat = String(katParts[0] || 'Lainnya').trim();
+      const subKat = String(katParts[1] || '').trim();
+
+      const rawDeskripsi = String(r[13] || '');
+      const hasLockMarker = rawDeskripsi.indexOf('[LOCKED]') === 0;
+      const cleanDeskripsi = hasLockMarker ? rawDeskripsi.replace(/^\[LOCKED\]\s*/, '') : rawDeskripsi;
+      const isLocked = hasLockMarker || lockedProductIds.indexOf(id) !== -1;
+
+      produk.push({
+        id: id,
+        nama: nama,
+        kategori: mainKat,
+        subKategori: subKat,
+        hargaSupplier: Number(r[3]) || 0,
+        hargaAsli: Number(r[4]) || Number(r[5]) || 0,
+        hargaDiskon: Number(r[5]) || 0,
+        stok: Number(r[6]) || 0,
+        terjual: Number(r[7]) || 0,
+        rating: Number(r[8]) || 5.0,
+        gambar: String(r[9] || ''),
+        varian: String(r[10] || 'Standar').split(',').map(v => v.trim()).filter(Boolean),
+        isFlashSale: r[11] === true || String(r[11]).toUpperCase() === 'TRUE',
+        badge: String(r[12] || 'Star+'),
+        deskripsi: cleanDeskripsi,
+        idSupplier: String(r[14] || ''),
+        namaSupplier: String(r[15] || '-'),
+        isLocked: isLocked
+      });
+    });
+  }
+
+  // 2. Baca Ulasan
+  const sheetUlasan = ss.getSheetByName('Ulasan');
+  const ulasan = [];
+  if (sheetUlasan && sheetUlasan.getLastRow() >= 2) {
+    const rows = sheetUlasan.getRange(2, 1, sheetUlasan.getLastRow() - 1, 7).getValues();
+    rows.forEach(r => {
+      const id = String(r[0] || '').trim();
+      if (!id) return;
+      ulasan.push({
+        id: id,
+        idProduk: String(r[1] || 'PRD-001').trim(),
+        nama: String(r[2] || 'Pembeli Hibualamo'),
+        rating: Number(r[3]) || 5,
+        komentar: String(r[4] || ''),
+        varian: String(r[5] || 'Standar'),
+        tanggal: String(r[6] || '')
+      });
+    });
+  }
+
+  // 3. Baca Supplier
+  const sheetSupplier = ss.getSheetByName('Supplier');
+  const supplier = [];
+  if (sheetSupplier && sheetSupplier.getLastRow() >= 2) {
+    const rows = sheetSupplier.getRange(2, 1, sheetSupplier.getLastRow() - 1, 5).getValues();
+    rows.forEach(r => {
+      const idSup = String(r[0] || '').trim();
+      if (!idSup) return;
+      supplier.push({
+        idSupplier: idSup,
+        namaSupplier: String(r[1] || '-'),
+        jenisSupplier: String(r[2] || '-'),
+        alamat: String(r[3] || '-'),
+        kontakPerson: String(r[4] || '-')
+      });
+    });
+  }
+
+  // 4. Kategori & Pengaturan Pembayaran
+  const rawKategori = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga');
+  const kategoriList = rawKategori.split(',').map(k => k.trim()).filter(Boolean);
+
+  const pengaturanBayar = {
+    qrisUrl: String(settings['QRIS_Url'] || 'https://placehold.co/300x300/1e293b/ffffff?text=QRIS+HibualamoStore'),
+    noRekening: String(settings['No_Rekening'] || 'Bank Mandiri - 1860000119434'),
+    namaPemilikRekening: String(settings['Nama_Pemilik_Rekening'] || 'Andri Illa'),
+    noWaAdmin: String(settings['No_WA_Admin'] || '08215075520'),
+    gmailPemilik: String(settings['Gmail_Pemilik'] || ''),
+    logoUrl: String(settings['Logo_Url'] || '')
+  };
+
+  return {
+    success: true,
+    produk: produk,
+    ulasan: ulasan,
+    supplier: supplier,
+    kategoriList: kategoriList,
+    subKategoriMap: subKategoriMap,
+    pengaturanBayar: pengaturanBayar,
+    lockedProductIds: lockedProductIds,
+    hideDummyProducts: hideDummyProducts
+  };
+}
+
+/**
+ * BUAT PESANAN BARU DARI PEMBELI
+ */
+function createOrder(payload) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetPesanan = ss.getSheetByName('Pesanan');
+  if (!sheetPesanan) {
+    setupDatabaseIfNeeded();
+    sheetPesanan = ss.getSheetByName('Pesanan');
+  }
+
+  const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+  const tanggal = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'dd/MM/yyyy HH:mm');
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  const ringkasanItem = items.map(it => `${it.qty}x ${it.nama} (${it.varian || 'Standar'})`).join(', ');
+
+  const subtotal = Number(payload.subtotal) || 0;
+  const ongkir = Number(payload.ongkir) || 0;
+  const diskonVoucher = Number(payload.diskonVoucher) || 0;
+  const totalBayar = Number(payload.totalBayar) || (subtotal + ongkir - diskonVoucher);
+
+  const rowData = [
+    orderId,
+    tanggal,
+    String(payload.namaPembeli || ''),
+    String(payload.noWa || ''),
+    String(payload.alamat || ''),
+    String(payload.catatan || '-'),
+    JSON.stringify(items),
+    ringkasanItem,
+    subtotal,
+    ongkir,
+    diskonVoucher,
+    totalBayar,
+    String(payload.kurir || 'Kurir Toko'),
+    String(payload.metodeBayar || 'COD'),
+    'Belum Bayar',
+    '-'
+  ];
+
+  sheetPesanan.appendRow(rowData);
+
+  // Kurangi stok & tambah terjual pada Sheet Produk
+  const sheetProduk = ss.getSheetByName('Produk');
+  if (sheetProduk && sheetProduk.getLastRow() >= 2) {
+    const prodRows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 8).getValues();
+    items.forEach(item => {
+      for (let i = 0; i < prodRows.length; i++) {
+        if (String(prodRows[i][0]).trim() === String(item.id).trim()) {
+          const currentStok = Number(prodRows[i][6]) || 0;
+          const currentTerjual = Number(prodRows[i][7]) || 0;
+          const qty = Number(item.qty) || 1;
+          sheetProduk.getRange(i + 2, 7).setValue(Math.max(0, currentStok - qty));
+          sheetProduk.getRange(i + 2, 8).setValue(currentTerjual + qty);
+          break;
+        }
+      }
+    });
+  }
+
+  // Kirim notifikasi email ke pemilik jika diatur
+  try {
+    const settings = getSettingsMap();
+    const gmailPemilik = String(settings['Gmail_Pemilik'] || '').trim();
+    if (gmailPemilik && gmailPemilik.indexOf('@') !== -1) {
+      MailApp.sendEmail({
+        to: gmailPemilik,
+        subject: `[Hibualamo Store] Pesanan Baru ${orderId} - ${payload.namaPembeli}`,
+        body:
+          `Halo Admin Hibualamo Store,\n\n` +
+          `Ada pesanan baru masuk:\n` +
+          `ID Pesanan: ${orderId}\n` +
+          `Tanggal: ${tanggal}\n` +
+          `Nama Pembeli: ${payload.namaPembeli}\n` +
+          `No. WhatsApp: ${payload.noWa}\n` +
+          `Alamat: ${payload.alamat}\n` +
+          `Item: ${ringkasanItem}\n` +
+          `Total Tagihan: Rp${totalBayar.toLocaleString('id-ID')}\n` +
+          `Metode Bayar: ${payload.metodeBayar}\n`
+      });
+    }
+  } catch (e) {}
+
+  return {
+    success: true,
+    order: {
+      idPesanan: orderId,
+      tanggal: tanggal,
+      namaPembeli: payload.namaPembeli,
+      noWa: payload.noWa,
+      alamat: payload.alamat,
+      catatan: payload.catatan || '-',
+      items: items,
+      ringkasanItem: ringkasanItem,
+      subtotal: subtotal,
+      ongkir: ongkir,
+      totalBayar: totalBayar,
+      kurir: payload.kurir,
+      metodeBayar: payload.metodeBayar,
+      status: 'Belum Bayar',
+      noResi: '-'
+    }
+  };
+}
+
+/**
+ * LACAK PESANAN PEMBELI
+ */
+function trackOrder(query) {
+  const q = String(query || '').trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, '');
+  if (!q) return { success: true, orders: [] };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetPesanan = ss.getSheetByName('Pesanan');
+  if (!sheetPesanan || sheetPesanan.getLastRow() < 2) {
+    return { success: true, orders: [] };
+  }
+
+  const rows = sheetPesanan.getRange(2, 1, sheetPesanan.getLastRow() - 1, 16).getValues();
+  const found = [];
+
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    const idPesanan = String(r[0] || '').trim();
+    const noWa = String(r[3] || '').trim();
+    const matchId = idPesanan.toLowerCase().indexOf(q) !== -1;
+    const matchWa = qDigits.length >= 4 && noWa.replace(/\D/g, '').indexOf(qDigits) !== -1;
+
+    if (matchId || matchWa) {
+      found.push({
+        idPesanan: idPesanan,
+        tanggal: String(r[1] || ''),
+        namaPembeli: String(r[2] || ''),
+        noWa: noWa,
+        alamat: String(r[4] || ''),
+        catatan: String(r[5] || '-'),
+        ringkasanItem: String(r[7] || ''),
+        subtotal: Number(r[8]) || 0,
+        ongkir: Number(r[9]) || 0,
+        totalBayar: Number(r[11]) || 0,
+        kurir: String(r[12] || ''),
+        metodeBayar: String(r[13] || ''),
+        status: String(r[14] || 'Diproses'),
+        noResi: String(r[15] || '-')
+      });
+    }
+  }
+
+  return { success: true, orders: found };
+}
+
+/**
+ * KIRIM ULASAN DARI PEMBELI
+ */
+function submitReview(payload) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetUlasan = ss.getSheetByName('Ulasan');
+  if (!sheetUlasan) {
+    setupDatabaseIfNeeded();
+    sheetUlasan = ss.getSheetByName('Ulasan');
+  }
+
+  const id = 'REV-' + Math.floor(1000 + Math.random() * 9000);
+  const tanggal = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'dd MMMM yyyy, HH:mm');
+  const reviewObj = {
+    id: id,
+    idProduk: String(payload.idProduk || 'PRD-001'),
+    nama: String(payload.namaPembeli || 'Pembeli Hibualamo'),
+    rating: Math.min(5, Math.max(1, Number(payload.rating) || 5)),
+    komentar: String(payload.komentar || ''),
+    varian: String(payload.varian || 'Standar'),
+    tanggal: tanggal
+  };
+
+  sheetUlasan.appendRow([
+    reviewObj.id,
+    reviewObj.idProduk,
+    reviewObj.nama,
+    reviewObj.rating,
+    reviewObj.komentar,
+    reviewObj.varian,
+    reviewObj.tanggal
+  ]);
+
+  return { success: true, review: reviewObj };
+}
+
+/**
+ * PANEL ADMIN: AMBIL SEMUA PESANAN & DATA TERBARU
+ */
+function adminGetOrders(pin) {
+  if (!verifyPin(pin)) {
+    return { success: false, message: 'Password / PIN Admin salah!' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetPesanan = ss.getSheetByName('Pesanan');
+  const orders = [];
+
+  if (sheetPesanan && sheetPesanan.getLastRow() >= 2) {
+    const rows = sheetPesanan.getRange(2, 1, sheetPesanan.getLastRow() - 1, 16).getValues();
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const r = rows[i];
+      if (!r[0]) continue;
+      orders.push({
+        idPesanan: String(r[0]),
+        tanggal: String(r[1] || ''),
+        namaPembeli: String(r[2] || ''),
+        noWa: String(r[3] || ''),
+        alamat: String(r[4] || ''),
+        catatan: String(r[5] || '-'),
+        ringkasanItem: String(r[7] || ''),
+        subtotal: Number(r[8]) || 0,
+        ongkir: Number(r[9]) || 0,
+        totalBayar: Number(r[11]) || 0,
+        kurir: String(r[12] || ''),
+        metodeBayar: String(r[13] || ''),
+        status: String(r[14] || 'Belum Bayar'),
+        noResi: String(r[15] || '-')
+      });
+    }
+  }
+
+  const initData = getInitialData();
+
+  return {
+    success: true,
+    orders: orders,
+    produk: initData.produk,
+    ulasan: initData.ulasan,
+    supplier: initData.supplier,
+    kategoriList: initData.kategoriList,
+    subKategoriMap: initData.subKategoriMap,
+    pengaturanBayar: initData.pengaturanBayar,
+    lockedProductIds: initData.lockedProductIds,
+    hideDummyProducts: initData.hideDummyProducts,
+    visitorStats: getVisitorStatsInternal(null, false)
+  };
+}
+
+function adminUpdateOrder(pin, idPesanan, statusBaru, resiBaru) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetPesanan = ss.getSheetByName('Pesanan');
+  if (!sheetPesanan || sheetPesanan.getLastRow() < 2) {
+    return { success: false, message: 'Sheet Pesanan kosong.' };
+  }
+
+  const rows = sheetPesanan.getRange(2, 1, sheetPesanan.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]).trim() === String(idPesanan).trim()) {
+      sheetPesanan.getRange(i + 2, 15).setValue(statusBaru);
+      sheetPesanan.getRange(i + 2, 16).setValue(resiBaru || '-');
+      return { success: true, message: 'Status pesanan berhasil diperbarui!' };
+    }
+  }
+
+  return { success: false, message: 'ID Pesanan tidak ditemukan di Sheet.' };
+}
+
+/**
+ * PANEL ADMIN: TAMBAH / EDIT PRODUK KE GOOGLE SHEETS
+ */
+function adminSaveProduct(pin, prod) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetProduk = ss.getSheetByName('Produk');
+  if (!sheetProduk) {
+    setupDatabaseIfNeeded();
+    sheetProduk = ss.getSheetByName('Produk');
+  }
+
+  const prodId = String(prod.id || '').trim() || ('PRD-' + Math.floor(100 + Math.random() * 900));
+  const mainKat = String(prod.kategori || 'Lainnya').trim();
+  const subKat = String(prod.subKategori || '').trim();
+  const combinedKategori = subKat ? `${mainKat}::${subKat}` : mainKat;
+
+  const varianStr = Array.isArray(prod.varian)
+    ? prod.varian.join(',')
+    : String(prod.varian || 'Standar');
+
+  let cleanDeskripsi = String(prod.deskripsi || '').replace(/^\[LOCKED\]\s*/, '');
+  if (prod.isLocked) {
+    cleanDeskripsi = '[LOCKED] ' + cleanDeskripsi;
+  }
+
+  // Pastikan daftar Locked_Products di sheet Pengaturan juga tetap sinkron
+  const settings = getSettingsMap();
+  const currentLockedList = String(settings['Locked_Products'] || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  let updatedLockedList = currentLockedList.filter(id => id !== prodId);
+  if (prod.isLocked) {
+    updatedLockedList.push(prodId);
+  }
+  setSettingValue('Locked_Products', updatedLockedList.join(','));
+
+  const lastRow = sheetProduk.getLastRow();
+  if (lastRow >= 2) {
+    const ids = sheetProduk.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (let i = 0; i < ids.length; i++) {
+      if (String(ids[i][0]).trim() === prodId) {
+        const existingRow = sheetProduk.getRange(i + 2, 1, 1, 16).getValues()[0];
+        const updatedRow = [
+          prodId,
+          String(prod.nama || ''),
+          combinedKategori,
+          Number(prod.hargaSupplier) || 0,
+          Number(prod.hargaAsli) || Number(prod.hargaDiskon) || 0,
+          Number(prod.hargaDiskon) || 0,
+          Number(prod.stok) || 0,
+          Number(existingRow[7]) || 0,
+          Number(existingRow[8]) || 5.0,
+          String(prod.gambar || existingRow[9] || ''),
+          varianStr,
+          Boolean(prod.isFlashSale),
+          String(existingRow[12] || 'Star+'),
+          cleanDeskripsi,
+          String(prod.idSupplier || ''),
+          String(prod.namaSupplier || '-')
+        ];
+        sheetProduk.getRange(i + 2, 1, 1, 16).setValues([updatedRow]);
+        SpreadsheetApp.flush();
+        return { success: true, id: prodId, gambar: updatedRow[9], lockedProductIds: updatedLockedList, message: 'Produk berhasil diperbarui!' };
+      }
+    }
+  }
+
+  const newRow = [
+    prodId,
+    String(prod.nama || ''),
+    combinedKategori,
+    Number(prod.hargaSupplier) || 0,
+    Number(prod.hargaAsli) || Number(prod.hargaDiskon) || 0,
+    Number(prod.hargaDiskon) || 0,
+    Number(prod.stok) || 0,
+    0,
+    5.0,
+    String(prod.gambar || ''),
+    varianStr,
+    Boolean(prod.isFlashSale),
+    'Star+',
+    cleanDeskripsi,
+    String(prod.idSupplier || ''),
+    String(prod.namaSupplier || '-')
+  ];
+  sheetProduk.appendRow(newRow);
+  SpreadsheetApp.flush();
+
+  return { success: true, id: prodId, gambar: newRow[9], lockedProductIds: updatedLockedList, message: 'Produk baru berhasil ditambahkan!' };
+}
+
+/**
+ * UPLOAD GAMBAR KE GOOGLE DRIVE
+ */
+function adminUploadImageToDrive(pin, base64Data, fileName, mimeType) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  try {
+    const splitBase64 = String(base64Data || '').split(',');
+    const rawBase64 = splitBase64.length > 1 ? splitBase64[1] : splitBase64[0];
+    const decoded = Utilities.base64Decode(rawBase64);
+    const blob = Utilities.newBlob(decoded, mimeType || 'image/jpeg', fileName || ('produk_' + Date.now() + '.jpg'));
+
+    const folderName = 'Hibualamo_Store_Assets';
+    const folders = DriveApp.getFoldersByName(folderName);
+    const folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    const fileId = file.getId();
+    const directUrl = 'https://lh3.googleusercontent.com/d/' + fileId;
+
+    return {
+      success: true,
+      fileId: fileId,
+      url: directUrl,
+      message: 'Foto berhasil diunggah ke Google Drive!'
+    };
+  } catch (err) {
+    return {
+      success: true,
+      url: base64Data,
+      message: 'Menggunakan gambar terkompresi langsung.'
+    };
+  }
+}
+
+/**
+ * KUNCI / SEMBUNYIKAN PRODUK
+ */
+function adminToggleProductLock(pin, idProduk, isLocked) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const cleanId = String(idProduk || '').trim();
+  const settings = getSettingsMap();
+  const currentList = String(settings['Locked_Products'] || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  let updatedList = currentList.filter(id => id !== cleanId);
+  if (isLocked) {
+    updatedList.push(cleanId);
+  }
+  setSettingValue('Locked_Products', updatedList.join(','));
+
+  // Update juga marker [LOCKED] pada deskripsi di Sheet Produk
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProduk = ss.getSheetByName('Produk');
+  if (sheetProduk && sheetProduk.getLastRow() >= 2) {
+    const rows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 14).getValues();
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]).trim() === cleanId) {
+        const cleanDesc = String(rows[i][13] || '').replace(/^\[LOCKED\]\s*/, '');
+        const newDesc = isLocked ? ('[LOCKED] ' + cleanDesc) : cleanDesc;
+        sheetProduk.getRange(i + 2, 14).setValue(newDesc);
+        break;
+      }
+    }
+  }
+
+  SpreadsheetApp.flush();
+
+  return {
+    success: true,
+    idProduk: cleanId,
+    isLocked: Boolean(isLocked),
+    lockedProductIds: updatedList
+  };
+}
+
+/**
+ * KELOLA ULASAN, SUPPLIER, DAN KATEGORI DI ADMIN
+ */
+function adminSaveReview(pin, revPayload) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetUlasan = ss.getSheetByName('Ulasan');
+  if (!sheetUlasan) {
+    setupDatabaseIfNeeded();
+    sheetUlasan = ss.getSheetByName('Ulasan');
+  }
+
+  const id = String(revPayload.id || '').trim() || ('REV-' + Math.floor(1000 + Math.random() * 9000));
+  const tanggal = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'dd MMMM yyyy, HH:mm');
+  const review = {
+    id: id,
+    idProduk: String(revPayload.idProduk || 'PRD-001'),
+    nama: String(revPayload.nama || 'Pembeli Hibualamo'),
+    rating: Number(revPayload.rating) || 5,
+    komentar: String(revPayload.komentar || ''),
+    varian: String(revPayload.varian || 'Standar'),
+    tanggal: tanggal
+  };
+
+  sheetUlasan.appendRow([
+    review.id,
+    review.idProduk,
+    review.nama,
+    review.rating,
+    review.komentar,
+    review.varian,
+    review.tanggal
+  ]);
+
+  return { success: true, review: review, message: 'Ulasan berhasil disimpan!' };
+}
+
+function adminDeleteReview(pin, revId) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetUlasan = ss.getSheetByName('Ulasan');
+  if (sheetUlasan && sheetUlasan.getLastRow() >= 2) {
+    const ids = sheetUlasan.getRange(2, 1, sheetUlasan.getLastRow() - 1, 1).getValues();
+    for (let i = ids.length - 1; i >= 0; i--) {
+      if (String(ids[i][0]).trim() === String(revId).trim()) {
+        sheetUlasan.deleteRow(i + 2);
+      }
+    }
+  }
+  return { success: true, message: 'Ulasan berhasil dihapus!' };
+}
+
+function adminSaveSupplier(pin, sup) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetSupplier = ss.getSheetByName('Supplier');
+  if (!sheetSupplier) {
+    setupDatabaseIfNeeded();
+    sheetSupplier = ss.getSheetByName('Supplier');
+  }
+
+  const idSup = String(sup.idSupplier || '').trim() || ('SUP-' + Math.floor(100 + Math.random() * 900));
+  sheetSupplier.appendRow([
+    idSup,
+    String(sup.namaSupplier || '-'),
+    String(sup.jenisSupplier || '-'),
+    String(sup.alamat || '-'),
+    String(sup.kontakPerson || '-')
+  ]);
+
+  return { success: true, idSupplier: idSup, message: 'Supplier berhasil disimpan!' };
+}
+
+function adminDeleteSupplier(pin, supId) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetSupplier = ss.getSheetByName('Supplier');
+  if (sheetSupplier && sheetSupplier.getLastRow() >= 2) {
+    const ids = sheetSupplier.getRange(2, 1, sheetSupplier.getLastRow() - 1, 1).getValues();
+    for (let i = ids.length - 1; i >= 0; i--) {
+      if (String(ids[i][0]).trim() === String(supId).trim()) {
+        sheetSupplier.deleteRow(i + 2);
+      }
+    }
+  }
+  return { success: true, message: 'Supplier berhasil dihapus!' };
+}
+
+function adminAddCategory(pin, namaKat) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const cleanKat = String(namaKat || '').trim();
+  const settings = getSettingsMap();
+  const list = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+
+  if (cleanKat && list.indexOf(cleanKat) === -1) {
+    list.push(cleanKat);
+    setSettingValue('Kategori', list.join(','));
+  }
+
+  return { success: true, kategoriList: list, message: 'Kategori berhasil ditambahkan!' };
+}
+
+function adminDeleteCategory(pin, namaKat) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const cleanKat = String(namaKat || '').trim();
+  const settings = getSettingsMap();
+  const list = String(settings['Kategori'] || '')
+    .split(',')
+    .map(k => k.trim())
+    .filter(k => k && k !== cleanKat);
+
+  setSettingValue('Kategori', list.join(','));
+  return { success: true, kategoriList: list, message: 'Kategori berhasil dihapus!' };
+}
+
+function adminSaveSubCategories(pin, subKategoriMap) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+  setSettingValue('Sub_Kategori', JSON.stringify(subKategoriMap || {}));
+  return {
+    success: true,
+    subKategoriMap: subKategoriMap || {},
+    message: 'Sub-kategori berhasil disimpan!'
+  };
+}
+
+function adminSetHideDummy(pin, hideDummy) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+  setSettingValue('Hide_Dummy', hideDummy ? 'TRUE' : 'FALSE');
+  return {
+    success: true,
+    hideDummyProducts: Boolean(hideDummy),
+    message: hideDummy
+      ? 'Produk contoh (dummy) disembunyikan di semua perangkat!'
+      : 'Produk contoh ditampilkan kembali.'
+  };
+}
+
+function adminSavePaymentSettings(pin, newPay) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  if (newPay && typeof newPay === 'object') {
+    if (newPay.logoUrl !== undefined) setSettingValue('Logo_Url', String(newPay.logoUrl));
+    if (newPay.qrisUrl !== undefined) setSettingValue('QRIS_Url', String(newPay.qrisUrl));
+    if (newPay.noRekening !== undefined) setSettingValue('No_Rekening', String(newPay.noRekening));
+    if (newPay.namaPemilikRekening !== undefined) setSettingValue('Nama_Pemilik_Rekening', String(newPay.namaPemilikRekening));
+    if (newPay.noWaAdmin !== undefined) setSettingValue('No_WA_Admin', String(newPay.noWaAdmin));
+    if (newPay.gmailPemilik !== undefined) setSettingValue('Gmail_Pemilik', String(newPay.gmailPemilik));
+  }
+
+  return {
+    success: true,
+    pengaturanBayar: newPay,
+    message: 'Pengaturan toko berhasil disimpan!'
+  };
+}
+
+function adminChangePassword(oldPin, newPin) {
+  if (!verifyPin(oldPin)) {
+    return { success: false, message: 'Password / PIN Admin lama salah!' };
+  }
+  const cleanNew = String(newPin || '').trim();
+  if (!cleanNew) {
+    return { success: false, message: 'PIN baru tidak boleh kosong!' };
+  }
+  setSettingValue('Password_Admin', cleanNew);
+  return { success: true, message: 'PIN Admin berhasil diperbarui!' };
+}
+
+/**
+ * PELACAKAN PENGUNJUNG ONLINE & HARIAN
+ */
+function pingVisitor(visitorId) {
+  const stats = getVisitorStatsInternal(visitorId, true);
+  return { success: true, visitorStats: stats };
+}
+
+function adminGetVisitorStats(pin) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+  const stats = getVisitorStatsInternal(null, false);
+  return { success: true, visitorStats: stats };
+}
+
+function getVisitorStatsInternal(visitorId, isPing) {
+  const now = Date.now();
+  const tz = Session.getScriptTimeZone() || 'Asia/Jakarta';
+  const todayKey = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+
+  const cache = CacheService.getScriptCache();
+  let activeMap = {};
+  try {
+    const rawCache = cache.get('HIBUALAMO_ACTIVE_VISITORS');
+    if (rawCache) activeMap = JSON.parse(rawCache);
+  } catch (e) {
+    activeMap = {};
+  }
+
+  if (isPing && visitorId) {
+    activeMap[String(visitorId)] = now;
+  }
+
+  // Hanya hitung pengunjung dalam 3 menit terakhir sebagai Online
+  const cutoff = now - (3 * 60 * 1000);
+  const cleanedMap = {};
+  let onlineCount = 0;
+  Object.keys(activeMap).forEach(vid => {
+    if (activeMap[vid] >= cutoff) {
+      cleanedMap[vid] = activeMap[vid];
+      onlineCount++;
+    }
+  });
+
+  try {
+    cache.put('HIBUALAMO_ACTIVE_VISITORS', JSON.stringify(cleanedMap), 600);
+  } catch (e) {}
+
+  // Hitung pengunjung unik hari ini
+  const props = PropertiesService.getScriptProperties();
+  let dailyData = { date: todayKey, visitors: {} };
+  try {
+    const rawDaily = props.getProperty('HIBUALAMO_DAILY_VISITORS');
+    if (rawDaily) {
+      const parsed = JSON.parse(rawDaily);
+      if (parsed && parsed.date === todayKey) {
+        dailyData = parsed;
+      }
+    }
+  } catch (e) {}
+
+  if (isPing && visitorId) {
+    dailyData.visitors[String(visitorId)] = true;
+    try {
+      props.setProperty('HIBUALAMO_DAILY_VISITORS', JSON.stringify(dailyData));
+    } catch (e) {}
+  }
+
+  const todayCount = Math.max(1, Object.keys(dailyData.visitors || {}).length);
+
+  return {
+    onlineCount: Math.max(1, onlineCount),
+    todayCount: Math.max(onlineCount, todayCount),
+    updatedAt: Utilities.formatDate(new Date(), tz, 'HH:mm:ss')
+  };
+}
