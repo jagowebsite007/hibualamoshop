@@ -420,6 +420,13 @@ function trackOrder(query) {
     const matchWa = qDigits.length >= 4 && noWa.replace(/\D/g, '').indexOf(qDigits) !== -1;
 
     if (matchId || matchWa) {
+      let parsedItems = [];
+      try {
+        if (r[6]) parsedItems = JSON.parse(String(r[6]));
+      } catch (e) {
+        parsedItems = [];
+      }
+
       found.push({
         idPesanan: idPesanan,
         tanggal: String(r[1] || ''),
@@ -427,6 +434,7 @@ function trackOrder(query) {
         noWa: noWa,
         alamat: String(r[4] || ''),
         catatan: String(r[5] || '-'),
+        items: Array.isArray(parsedItems) ? parsedItems : [],
         ringkasanItem: String(r[7] || ''),
         subtotal: Number(r[8]) || 0,
         ongkir: Number(r[9]) || 0,
@@ -495,6 +503,10 @@ function adminGetOrders(pin) {
     for (let i = rows.length - 1; i >= 0; i--) {
       const r = rows[i];
       if (!r[0]) continue;
+      const statusPesanan = String(r[14] || 'Belum Bayar').trim();
+      // Transaksi yang sudah Selesai otomatis tidak ditampilkan di daftar Pesanan Masuk
+      if (statusPesanan.toLowerCase() === 'selesai') continue;
+
       orders.push({
         idPesanan: String(r[0]),
         tanggal: String(r[1] || ''),
@@ -508,7 +520,7 @@ function adminGetOrders(pin) {
         totalBayar: Number(r[11]) || 0,
         kurir: String(r[12] || ''),
         metodeBayar: String(r[13] || ''),
-        status: String(r[14] || 'Belum Bayar'),
+        status: statusPesanan,
         noResi: String(r[15] || '-')
       });
     }
