@@ -57,6 +57,9 @@
         <button type="button" data-action="open-track-modal" class="hover:underline flex items-center gap-1 cursor-pointer">
           <i class="fa-solid fa-truck-fast"></i> Lacak Pesanan
         </button>
+        <a href="https://datasupplier.vercel.app/" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-center gap-1 cursor-pointer text-yellow-300 font-bold">
+          <i class="fa-solid fa-handshake"></i> Jadi Mitra Web
+        </a>
       </div>
     </div>
   </div>
@@ -105,6 +108,17 @@
           <i class="fa-solid fa-box-open text-sm"></i>
           <span class="hidden md:inline">Lacak Pesanan</span>
         </button>
+
+        <a
+          href="https://datasupplier.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+          title="Jadi Mitra Web"
+        >
+          <i class="fa-solid fa-handshake text-sm"></i>
+          <span class="hidden md:inline">Jadi Mitra Web</span>
+        </a>
 
         <button
           type="button"
@@ -571,6 +585,7 @@
       </div>
       <div class="flex items-center gap-4">
         <button type="button" data-action="open-track-modal" class="hover:text-Hibualamo cursor-pointer">Lacak Pesanan</button>
+        <a href="https://datasupplier.vercel.app/" target="_blank" rel="noopener noreferrer" class="hover:text-Hibualamo cursor-pointer font-semibold">Jadi Mitra Web</a>
         <button type="button" data-action="toggle-live-chat" class="hover:text-Hibualamo cursor-pointer">Bantuan CS</button>
       </div>
     </div>
@@ -1021,6 +1036,8 @@
       editingProductId: '',
       cameraTargetProductId: '',
       editingReviewId: '',
+      adminOrderDateFilter: '',
+      reviewedOrderItems: {},
       visitorId: '',
       visitorStats: {
         onlineCount: 1,
@@ -1870,7 +1887,7 @@
           <h4 class="font-extrabold text-slate-800">Ulasan Pembeli (${productReviews.length})</h4>
 
           ${productReviews.length === 0 ? `
-            <p class="text-slate-400 italic">Belum ada ulasan untuk produk ini. Jadilah yang pertama memberikan ulasan!</p>
+            <p class="text-slate-400 italic">Belum ada ulasan untuk produk ini. Ulasan hanya dapat diberikan setelah pesanan selesai dibeli.</p>
           ` : `
             <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
               ${productReviews.map(r => `
@@ -1885,25 +1902,6 @@
               `).join('')}
             </div>
           `}
-
-          <!-- FORM KIRIM ULASAN -->
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-            <h5 class="font-bold text-slate-700">Tulis Ulasan Anda</h5>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input id="custRevNama" type="text" placeholder="Nama Anda..." class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
-              <select id="custRevRating" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-amber-500">
-                <option value="5">⭐⭐⭐⭐⭐ Sangat Puas (5)</option>
-                <option value="4">⭐⭐⭐⭐ Puas (4)</option>
-                <option value="3">⭐⭐⭐ Cukup (3)</option>
-              </select>
-            </div>
-            <div class="flex gap-2">
-              <input id="custRevKomentar" type="text" placeholder="Bagikan pengalaman belanja Anda..." class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
-              <button type="button" data-action="submit-customer-review" class="bg-slate-900 hover:bg-Hibualamo text-white font-bold px-3.5 py-1.5 rounded-lg cursor-pointer shrink-0">
-                Kirim
-              </button>
-            </div>
-          </div>
         </div>
       `;
     }
@@ -2085,6 +2083,34 @@
       window.open(`https://wa.me/${rawWa}?text=${encodeURIComponent(waText)}`, '_blank');
     }
 
+    function resolveOrderPurchasedItems(o) {
+      if (Array.isArray(o.items) && o.items.length > 0) {
+        return o.items.map(it => ({
+          id: String(it.id || 'PRD-001'),
+          nama: String(it.nama || 'Produk'),
+          varian: String(it.varian || 'Standar')
+        }));
+      }
+      // Fallback ekstraksi dari ringkasanItem jika items JSON kosong
+      const summary = String(o.ringkasanItem || '');
+      const matched = [];
+      state.produk.forEach(p => {
+        if (summary.toLowerCase().includes(String(p.nama || '').toLowerCase())) {
+          matched.push({
+            id: p.id,
+            nama: p.nama,
+            varian: (Array.isArray(p.varian) && p.varian[0]) ? p.varian[0] : 'Standar'
+          });
+        }
+      });
+      if (matched.length > 0) return matched;
+      return [{
+        id: state.produk[0]?.id || 'PRD-001',
+        nama: summary || 'Produk Pesanan',
+        varian: 'Standar'
+      }];
+    }
+
     async function handleTrackOrder() {
       const q = document.getElementById('trackOrderInput')?.value.trim() || '';
       const container = document.getElementById('trackOrderResultContainer');
@@ -2097,7 +2123,17 @@
 
       container.innerHTML = `<p class="text-slate-500">Mencari pesanan...</p>`;
       const res = await callServer('trackOrder', q);
-      const list = Array.isArray(res?.orders) ? res.orders : [];
+      let list = Array.isArray(res?.orders) ? res.orders : [];
+
+      if (list.length === 0 && Array.isArray(state.localOrders) && state.localOrders.length > 0) {
+        const qLow = q.toLowerCase();
+        const qDigits = qLow.replace(/\D/g, '');
+        list = state.localOrders.filter(o => {
+          const matchId = String(o.idPesanan || '').toLowerCase().includes(qLow);
+          const matchWa = qDigits.length >= 4 && String(o.noWa || '').replace(/\D/g, '').includes(qDigits);
+          return matchId || matchWa;
+        });
+      }
 
       if (list.length === 0) {
         container.innerHTML = `
@@ -2108,18 +2144,69 @@
         return;
       }
 
-      container.innerHTML = list.map(o => `
-        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-          <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
-            <span class="font-extrabold text-Hibualamo">${escapeHtmlAttr(o.idPesanan)}</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-100 text-Hibualamo">${escapeHtmlAttr(o.status || 'Diproses')}</span>
+      container.innerHTML = list.map(o => {
+        const isCompleted = String(o.status || '').trim().toLowerCase() === 'selesai';
+        const purchasedItems = isCompleted ? resolveOrderPurchasedItems(o) : [];
+
+        return `
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+              <span class="font-extrabold text-Hibualamo">${escapeHtmlAttr(o.idPesanan)}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-Hibualamo'}">${escapeHtmlAttr(o.status || 'Diproses')}</span>
+            </div>
+            <p><strong>Nama:</strong> ${escapeHtmlAttr(o.namaPembeli)}</p>
+            <p><strong>Pesanan:</strong> ${escapeHtmlAttr(o.ringkasanItem)}</p>
+            <p><strong>Total:</strong> ${formatRupiah(o.totalBayar)} (${escapeHtmlAttr(o.metodeBayar)})</p>
+            <p><strong>No. Resi:</strong> <span class="font-mono font-bold text-slate-800">${escapeHtmlAttr(o.noResi || '-')}</span></p>
+
+            ${isCompleted ? `
+              <div class="mt-2 pt-2.5 border-t border-slate-200 space-y-2.5">
+                <div class="flex items-center gap-1.5 text-emerald-700 font-extrabold text-xs">
+                  <i class="fa-solid fa-star text-amber-500"></i>
+                  <span>Pesanan Selesai — Beri Ulasan Pembelian Anda</span>
+                </div>
+                ${purchasedItems.map((item, idx) => {
+                  const reviewKey = `${o.idPesanan}_${item.id}_${idx}`;
+                  const alreadyReviewed = Boolean(state.reviewedOrderItems && state.reviewedOrderItems[reviewKey]);
+                  return `
+                    <div id="trackRevBox_${escapeHtmlAttr(reviewKey)}" class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-2">
+                      <div class="font-bold text-slate-800 text-[11px]">${escapeHtmlAttr(item.nama)} <span class="text-slate-400 font-normal">(${escapeHtmlAttr(item.varian || 'Standar')})</span></div>
+                      ${alreadyReviewed ? `
+                        <div class="text-emerald-600 font-bold text-[11px] flex items-center gap-1">
+                          <i class="fa-solid fa-circle-check"></i> Terima kasih! Ulasan untuk produk ini sudah dikirim.
+                        </div>
+                      ` : `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <input id="trackRevNama_${escapeHtmlAttr(reviewKey)}" type="text" value="${escapeHtmlAttr(o.namaPembeli || '')}" placeholder="Nama Anda..." class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-xs">
+                          <select id="trackRevRating_${escapeHtmlAttr(reviewKey)}" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-amber-500 text-xs">
+                            <option value="5">⭐⭐⭐⭐⭐ Sangat Puas (5)</option>
+                            <option value="4">⭐⭐⭐⭐ Puas (4)</option>
+                            <option value="3">⭐⭐⭐ Cukup (3)</option>
+                            <option value="2">⭐⭐ Kurang (2)</option>
+                            <option value="1">⭐ Kecewa (1)</option>
+                          </select>
+                        </div>
+                        <div class="flex gap-2">
+                          <input id="trackRevKomentar_${escapeHtmlAttr(reviewKey)}" type="text" placeholder="Tulis ulasan produk yang Anda beli..." class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-xs">
+                          <button
+                            type="button"
+                            data-submit-completed-review="${escapeHtmlAttr(reviewKey)}"
+                            data-rev-prod-id="${escapeHtmlAttr(item.id)}"
+                            data-rev-varian="${escapeHtmlAttr(item.varian || 'Standar')}"
+                            class="bg-Hibualamo hover:bg-HibualamoDark text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer shrink-0 text-xs"
+                          >
+                            Kirim Ulasan
+                          </button>
+                        </div>
+                      `}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
           </div>
-          <p><strong>Nama:</strong> ${escapeHtmlAttr(o.namaPembeli)}</p>
-          <p><strong>Pesanan:</strong> ${escapeHtmlAttr(o.ringkasanItem)}</p>
-          <p><strong>Total:</strong> ${formatRupiah(o.totalBayar)} (${escapeHtmlAttr(o.metodeBayar)})</p>
-          <p><strong>No. Resi:</strong> <span class="font-mono font-bold text-slate-800">${escapeHtmlAttr(o.noResi || '-')}</span></p>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     // FITUR KLIK LOGO 10 KALI UNTUK MEMBUKA KOTAK DIALOG PIN ADMIN
@@ -2260,15 +2347,72 @@
         subs.map(sc => `<option value="${escapeHtmlAttr(sc)}" ${String(sc) === String(selectedSub) ? 'selected' : ''}>${escapeHtmlAttr(sc)}</option>`).join('');
     }
 
+    function extractOrderDateYMD(tanggalStr) {
+      if (!tanggalStr) return '';
+      const clean = String(tanggalStr).trim();
+      // Format dd/MM/yyyy atau dd-MM-yyyy
+      const m1 = clean.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+      if (m1) {
+        const dd = m1[1].padStart(2, '0');
+        const mm = m1[2].padStart(2, '0');
+        const yyyy = m1[3];
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      // Format yyyy-MM-dd
+      const m2 = clean.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (m2) {
+        return `${m2[1]}-${m2[2]}-${m2[3]}`;
+      }
+      return '';
+    }
+
     function renderAdminOrders() {
       const container = document.getElementById('adminOrdersPanel');
       if (!container) return;
 
-      if (!state.localOrders || state.localOrders.length === 0) {
-        container.innerHTML = `
+      // Sembunyikan otomatis transaksi yang sudah berstatus "Selesai" dari daftar Pesanan Masuk
+      const activeOrders = (state.localOrders || []).filter(
+        o => String(o.status || '').trim().toLowerCase() !== 'selesai'
+      );
+
+      const filterDate = String(state.adminOrderDateFilter || '').trim();
+      const filteredOrders = filterDate
+        ? activeOrders.filter(o => extractOrderDateYMD(o.tanggal) === filterDate)
+        : activeOrders;
+
+      const filterBarHTML = `
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <label for="admOrderDateFilterInput" class="font-bold text-slate-700 flex items-center gap-1.5">
+              <i class="fa-solid fa-calendar-days text-Hibualamo"></i> Filter Tanggal Transaksi:
+            </label>
+            <input
+              id="admOrderDateFilterInput"
+              type="date"
+              value="${escapeHtmlAttr(filterDate)}"
+              class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-slate-700"
+            >
+            ${filterDate ? `
+              <button
+                type="button"
+                data-action="admin-reset-order-date"
+                class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-lg cursor-pointer"
+              >
+                Reset Tanggal
+              </button>
+            ` : ''}
+          </div>
+          <div class="text-slate-500 font-semibold">
+            Menampilkan <strong>${filteredOrders.length}</strong> pesanan aktif
+          </div>
+        </div>
+      `;
+
+      if (filteredOrders.length === 0) {
+        container.innerHTML = filterBarHTML + `
           <div class="bg-slate-50 p-8 rounded-xl border border-slate-200 text-center text-xs text-slate-400">
             <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
-            Belum ada pesanan masuk saat ini.
+            ${filterDate ? 'Tidak ada pesanan masuk pada tanggal yang dipilih.' : 'Belum ada pesanan masuk saat ini.'}
           </div>
         `;
         return;
@@ -2276,7 +2420,7 @@
 
       const statuses = ['Belum Bayar', 'Sudah Bayar', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan'];
 
-      container.innerHTML = state.localOrders.map(o => `
+      container.innerHTML = filterBarHTML + filteredOrders.map(o => `
         <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
             <div>
@@ -2336,7 +2480,11 @@
           saveLocalState();
         }
         renderAdminOrders();
-        showToast(`Pesanan ${orderId} diperbarui ke ${statusBaru}!`, 'success');
+        if (String(statusBaru).trim().toLowerCase() === 'selesai') {
+          showToast(`Pesanan ${orderId} Selesai & otomatis dihapus dari daftar Pesanan Masuk!`, 'success');
+        } else {
+          showToast(`Pesanan ${orderId} diperbarui ke ${statusBaru}!`, 'success');
+        }
       }
     }
 
@@ -3294,6 +3442,12 @@
       });
 
       document.body.addEventListener('change', (e) => {
+        if (e.target && e.target.id === 'admOrderDateFilterInput') {
+          state.adminOrderDateFilter = e.target.value || '';
+          renderAdminOrders();
+          return;
+        }
+
         const inlineCatSelect = e.target.closest('[data-inline-cat-select]');
         if (inlineCatSelect) {
           const pid = inlineCatSelect.getAttribute('data-inline-cat-select');
@@ -3458,11 +3612,57 @@
           return;
         }
 
+        const submitCompletedRevBtn = e.target.closest('[data-submit-completed-review]');
+        if (submitCompletedRevBtn) {
+          const reviewKey = submitCompletedRevBtn.getAttribute('data-submit-completed-review');
+          const idProduk = submitCompletedRevBtn.getAttribute('data-rev-prod-id') || 'PRD-001';
+          const varian = submitCompletedRevBtn.getAttribute('data-rev-varian') || 'Standar';
+          const namaPembeli = document.getElementById(`trackRevNama_${reviewKey}`)?.value.trim() || 'Pembeli Hibualamo';
+          const rating = Number(document.getElementById(`trackRevRating_${reviewKey}`)?.value) || 5;
+          const komentar = document.getElementById(`trackRevKomentar_${reviewKey}`)?.value.trim() || '';
+
+          if (!komentar) {
+            showToast('Tulis komentar ulasan Anda terlebih dahulu!', 'error');
+            return;
+          }
+
+          const res = await callServer('submitReview', {
+            idProduk,
+            namaPembeli,
+            rating,
+            komentar,
+            varian
+          });
+
+          const newRev = normalizeReview(res?.review || {
+            id: 'REV-' + Math.floor(1000 + Math.random() * 9000),
+            idProduk,
+            nama: namaPembeli,
+            rating,
+            komentar,
+            varian,
+            tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+          });
+
+          if (newRev) {
+            state.ulasan.unshift(newRev);
+          }
+          state.reviewedOrderItems[reviewKey] = true;
+          saveLocalState();
+          handleTrackOrder();
+          showToast('Terima kasih atas ulasan pembelian Anda!', 'success');
+          return;
+        }
+
         const actionEl = e.target.closest('[data-action]');
         if (!actionEl) return;
         const action = actionEl.getAttribute('data-action');
 
         switch (action) {
+          case 'admin-reset-order-date':
+            state.adminOrderDateFilter = '';
+            renderAdminOrders();
+            break;
           case 'open-cart-modal':
             renderCartModal();
             openModal('cartModal');
