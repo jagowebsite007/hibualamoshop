@@ -1,6 +1,6 @@
 /**
  * FILE: kode.gs
- * Backend Utama Google Apps Script - Hibualamo Store
+ * Backend Utama Google Apps Script - Hibualamo Shop
  * Mendukung penyimpanan Master Data ke Google Sheets, Upload Gambar ke Google Drive,
  * Notifikasi Email, Statistik Pengunjung Live, serta Sinkronisasi Lintas Browser/Perangkat.
  */
@@ -36,7 +36,7 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile('index');
   return template
     .evaluate()
-    .setTitle('Hibualamo Store - Belanja Mudah & Terpercaya')
+    .setTitle('Hibualamo Shop - Belanja Mudah & Terpercaya')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -266,7 +266,7 @@ function getInitialData() {
   const kategoriList = rawKategori.split(',').map(k => k.trim()).filter(Boolean);
 
   const pengaturanBayar = {
-    qrisUrl: String(settings['QRIS_Url'] || 'https://placehold.co/300x300/1e293b/ffffff?text=QRIS+HibualamoStore'),
+    qrisUrl: String(settings['QRIS_Url'] || 'https://placehold.co/300x300/1e293b/ffffff?text=QRIS+HibualamoShop'),
     noRekening: String(settings['No_Rekening'] || 'Bank Mandiri - 1860000119434'),
     namaPemilikRekening: String(settings['Nama_Pemilik_Rekening'] || 'Andri Illa'),
     noWaAdmin: String(settings['No_WA_Admin'] || '08215075520'),
@@ -357,9 +357,9 @@ function createOrder(payload) {
     if (gmailPemilik && gmailPemilik.indexOf('@') !== -1) {
       MailApp.sendEmail({
         to: gmailPemilik,
-        subject: `[Hibualamo Store] Pesanan Baru ${orderId} - ${payload.namaPembeli}`,
+        subject: `[Hibualamo Shop] Pesanan Baru ${orderId} - ${payload.namaPembeli}`,
         body:
-          `Halo Admin Hibualamo Store,\n\n` +
+          `Halo Admin Hibualamo Shop,\n\n` +
           `Ada pesanan baru masuk:\n` +
           `ID Pesanan: ${orderId}\n` +
           `Tanggal: ${tanggal}\n` +
