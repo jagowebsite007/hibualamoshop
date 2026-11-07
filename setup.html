@@ -1,6 +1,6 @@
 /**
  * FILE: setup.gs
- * Fungsi: Inisialisasi struktur Google Sheets untuk Hibualamo Store
+ * Fungsi: Inisialisasi struktur Google Sheets untuk Hibualamo Shop
  * DILENGKAPI PROTEKSI DATA (ANTI-RESET):
  * Jika Sheet sudah memiliki data produk/supplier/pesanan, fungsi ini TIDAK AKAN
  * menghapus (clear) atau menimpa data yang sudah Anda tambahkan.
@@ -269,7 +269,7 @@ function setupDatabase() {
   const defaultSettings = [
     ['Password_Admin', 'Jangan@123'],
     ['Kategori', 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga'],
-    ['QRIS_Url', 'https://placehold.co/300x300/1e293b/ffffff?text=QRIS+HibualamoStore'],
+    ['QRIS_Url', 'https://placehold.co/300x300/1e293b/ffffff?text=QRIS+HibualamoShop'],
     ['No_Rekening', 'Bank Mandiri - 1860000119434'],
     ['Nama_Pemilik_Rekening', 'Andri Illa'],
     ['No_WA_Admin', '08215075520'],
@@ -300,7 +300,7 @@ function setupDatabase() {
 }
 
 /**
- * Memberikan warna oranye khas Hibualamo Store pada baris Header Sheet
+ * Memberikan warna oranye khas Hibualamo Shop pada baris Header Sheet
  */
 function styleHeader(sheet, numCols) {
   const headerRange = sheet.getRange(1, 1, 1, numCols);
