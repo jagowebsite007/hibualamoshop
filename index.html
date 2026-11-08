@@ -148,7 +148,7 @@
           </span>
           <div>
             <h2 class="text-sm font-extrabold">Panel Admin Hibualamo Shop</h2>
-            <p class="text-[11px] text-slate-400">Kelola Pesanan, Produk, Kategori, Supplier & Pengaturan</p>
+            <p class="text-[11px] text-slate-400">Kelola Pesanan, Produk, Kategori, Banner, Supplier & Pengaturan</p>
           </div>
         </div>
 
@@ -183,6 +183,9 @@
         </button>
         <button id="tabAdminCategories" type="button" data-admin-tab="categories" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
           <i class="fa-solid fa-layer-group mr-1"></i> Kategori & Sub
+        </button>
+        <button id="tabAdminBanners" type="button" data-admin-tab="banners" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
+          <i class="fa-solid fa-images mr-1"></i> Banner Slider
         </button>
         <button id="tabAdminReviews" type="button" data-admin-tab="reviews" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer shrink-0">
           <i class="fa-solid fa-star mr-1"></i> Ulasan (<span id="adminReviewTotalCount">0</span>)
@@ -340,6 +343,61 @@
                 Simpan Sub-Kategori
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- 3B. PANEL BANNER SLIDER -->
+        <div id="adminBannersPanel" class="hidden space-y-4 text-xs">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+              <h3 id="admBannerFormTitle" class="font-extrabold text-slate-800 text-sm">Tambah / Edit Slide Banner Promo</h3>
+              <button id="btnCancelEditBanner" type="button" data-action="admin-cancel-edit-banner" class="hidden text-red-600 font-bold hover:underline cursor-pointer">
+                Batal Edit
+              </button>
+            </div>
+            <input id="admBannerId" type="hidden" value="">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Teks Badge Kuning *</label>
+                <input id="admBannerBadge" type="text" placeholder="Contoh: PROMO SPESIAL HARI INI" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Rating Toko di Banner</label>
+                <input id="admBannerRating" type="text" value="4.9" placeholder="4.9" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Tema Warna Banner</label>
+                <select id="admBannerTheme" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold">
+                  <option value="from-Hibualamo to-orange-500">Oranye Hibualamo (Utama)</option>
+                  <option value="from-HibualamoDark to-orange-500">Merah Oranye Hangat</option>
+                  <option value="from-orange-600 to-amber-500">Oranye Keemasan</option>
+                  <option value="from-rose-600 to-orange-500">Merah Promo Spesial</option>
+                  <option value="from-emerald-600 to-teal-500">Hijau Segar</option>
+                  <option value="from-indigo-600 to-blue-500">Biru Elektronik</option>
+                </select>
+              </div>
+              <div class="sm:col-span-3">
+                <label class="block font-bold text-slate-700 mb-1">Judul Utama Banner *</label>
+                <input id="admBannerTitle" type="text" placeholder="Contoh: Belanja Kebutuhan Harian & Elektronik Lebih Hemat!" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+              <div class="sm:col-span-3">
+                <label class="block font-bold text-slate-700 mb-1">Subjudul / Deskripsi Singkat *</label>
+                <input id="admBannerSubtitle" type="text" placeholder="Contoh: Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <button type="button" data-action="admin-save-banner" class="bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold px-4 py-2 rounded-xl cursor-pointer">
+                <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Slide Banner
+              </button>
+              <button type="button" data-action="admin-reset-default-banners" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl cursor-pointer">
+                Reset ke Default (3 Slide)
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Daftar Slide Aktif (<span id="adminBannerCount">0</span>)</h4>
+            <div id="adminBannerListContainer" class="space-y-2"></div>
           </div>
         </div>
 
@@ -508,25 +566,51 @@
       </div>
     </section>
 
-    <!-- BANNER PROMO -->
-    <section class="bg-gradient-to-r from-Hibualamo to-orange-500 rounded-2xl p-4 sm:p-6 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="space-y-1.5 max-w-xl">
-        <span class="inline-block bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-          Promo Spesial Hari Ini
-        </span>
-        <h2 class="text-lg sm:text-2xl font-extrabold leading-tight">Belanja Kebutuhan Harian & Elektronik Lebih Hemat!</h2>
-        <p class="text-xs sm:text-sm text-orange-100">Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.</p>
-      </div>
-      <div class="flex items-center gap-2 shrink-0">
-        <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
-          <div class="text-[10px] text-orange-100">Total Produk</div>
-          <div id="heroProductCount" class="text-base font-extrabold">8+</div>
+    <!-- BANNER PROMO SLIDER -->
+    <section id="heroBannerSlider" class="relative rounded-2xl overflow-hidden shadow-sm group select-none">
+      <div id="heroBannerTrack" class="flex transition-transform duration-500 ease-out">
+        <!-- Slide Default (Akan di-render otomatis oleh sistem slider) -->
+        <div class="w-full shrink-0 bg-gradient-to-r from-Hibualamo to-orange-500 p-4 sm:p-6 pb-7 sm:pb-7 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="space-y-1.5 max-w-xl">
+            <span class="inline-block bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Promo Spesial Hari Ini
+            </span>
+            <h2 class="text-lg sm:text-2xl font-extrabold leading-tight">Belanja Kebutuhan Harian & Elektronik Lebih Hemat!</h2>
+            <p class="text-xs sm:text-sm text-orange-100">Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
+              <div class="text-[10px] text-orange-100">Total Produk</div>
+              <div id="heroProductCount" class="hero-product-count text-base font-extrabold">8+</div>
+            </div>
+            <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
+              <div class="text-[10px] text-orange-100">Rating Toko</div>
+              <div class="text-base font-extrabold text-yellow-300"><i class="fa-solid fa-star text-xs"></i> 4.9</div>
+            </div>
+          </div>
         </div>
-        <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
-          <div class="text-[10px] text-orange-100">Rating Toko</div>
-          <div class="text-base font-extrabold text-yellow-300"><i class="fa-solid fa-star text-xs"></i> 4.9</div>
-        </div>
       </div>
+
+      <!-- Tombol Geser Kiri & Kanan -->
+      <button
+        type="button"
+        data-action="banner-prev"
+        aria-label="Slide Sebelumnya"
+        class="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer z-10"
+      >
+        <i class="fa-solid fa-chevron-left text-xs"></i>
+      </button>
+      <button
+        type="button"
+        data-action="banner-next"
+        aria-label="Slide Berikutnya"
+        class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer z-10"
+      >
+        <i class="fa-solid fa-chevron-right text-xs"></i>
+      </button>
+
+      <!-- Titik Indikator Slider (Dots) -->
+      <div id="heroBannerDots" class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10"></div>
     </section>
 
     <!-- FLASH SALE / PRODUK TERLARIS -->
@@ -823,6 +907,33 @@
 
     const DUMMY_PRODUCT_IDS = ['PRD-001', 'PRD-002', 'PRD-003', 'PRD-004', 'PRD-005', 'PRD-006', 'PRD-007', 'PRD-008'];
 
+    const DEFAULT_BANNER_SLIDES = [
+      {
+        id: 'BNR-001',
+        badge: 'Promo Spesial Hari Ini',
+        title: 'Belanja Kebutuhan Harian & Elektronik Lebih Hemat!',
+        subtitle: 'Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.',
+        theme: 'from-Hibualamo to-orange-500',
+        rating: '4.9'
+      },
+      {
+        id: 'BNR-002',
+        badge: 'Flash Sale & Harga Grosir',
+        title: 'Diskon Spesial Produk Terlaris Minggu Ini!',
+        subtitle: 'Dapatkan harga terbaik untuk elektronik, fashion, dan kebutuhan rumah tangga pilihan.',
+        theme: 'from-HibualamoDark to-orange-500',
+        rating: '4.9'
+      },
+      {
+        id: 'BNR-003',
+        badge: 'Layanan Cepat & Aman',
+        title: 'Bisa Bayar di Tempat (COD) & Pengiriman Instan!',
+        subtitle: 'Pesanan diproses cepat setiap hari dengan jaminan produk 100% original & berkualitas.',
+        theme: 'from-orange-600 to-amber-500',
+        rating: '4.9'
+      }
+    ];
+
     const MOCK_DATA = {
       supplier: [
         { idSupplier: 'SUP-001', namaSupplier: 'PT Sumber Elektronik Jaya', jenisSupplier: 'Distributor Resmi', alamat: 'Jl. Mangga Dua Raya No. 18, Jakarta Pusat', kontakPerson: 'Bpk. Hendra (081299887766)' },
@@ -1000,6 +1111,8 @@
       voucher: [],
       ulasan: [...MOCK_DATA.ulasan],
       supplier: [...MOCK_DATA.supplier],
+      bannerSlides: [...DEFAULT_BANNER_SLIDES],
+      currentBannerIndex: 0,
       kategoriList: ['Elektronik', 'Fashion', 'Makanan', 'Aksesoris', 'Rumah Tangga'],
       subKategoriMap: {
         'Elektronik': ['Audio', 'Gadget'],
@@ -1059,6 +1172,8 @@
 
     let activeCameraStream = null;
     let currentCameraFacingMode = 'environment';
+    let bannerAutoSlideTimer = null;
+    let bannerTouchStartX = 0;
 
     function formatRupiah(num) {
       const n = Number(num) || 0;
@@ -1150,6 +1265,7 @@
         localStorage.setItem('HibualamoStore_produk', JSON.stringify(state.produk));
         localStorage.setItem('HibualamoStore_ulasan', JSON.stringify(state.ulasan));
         localStorage.setItem('HibualamoStore_supplier', JSON.stringify(state.supplier));
+        localStorage.setItem('HibualamoStore_bannerSlides', JSON.stringify(state.bannerSlides));
         localStorage.setItem('HibualamoStore_kategoriList', JSON.stringify(state.kategoriList));
         localStorage.setItem('HibualamoStore_subKategoriMap', JSON.stringify(state.subKategoriMap));
         localStorage.setItem('HibualamoStore_cart', JSON.stringify(state.cart));
@@ -1203,6 +1319,12 @@
           if (Array.isArray(parsed) && parsed.length > 0) state.supplier = parsed;
         }
 
+        const savedBanners = localStorage.getItem('HibualamoStore_bannerSlides');
+        if (savedBanners) {
+          const parsed = JSON.parse(savedBanners);
+          if (Array.isArray(parsed) && parsed.length > 0) state.bannerSlides = parsed;
+        }
+
         const savedKategori = localStorage.getItem('HibualamoStore_kategoriList');
         if (savedKategori) {
           const parsed = JSON.parse(savedKategori);
@@ -1212,7 +1334,12 @@
         const savedSubKat = localStorage.getItem('HibualamoStore_subKategoriMap');
         if (savedSubKat) {
           const parsed = JSON.parse(savedSubKat);
-          if (parsed && typeof parsed === 'object') state.subKategoriMap = parsed;
+          if (parsed && typeof parsed === 'object') {
+            state.subKategoriMap = parsed;
+            if (Array.isArray(parsed['__BANNER_SLIDES__']) && parsed['__BANNER_SLIDES__'].length > 0) {
+              state.bannerSlides = parsed['__BANNER_SLIDES__'];
+            }
+          }
         }
 
         const savedCart = localStorage.getItem('HibualamoStore_cart');
@@ -1498,6 +1625,9 @@
         state.subKategoriMap = remoteConnected
           ? res.subKategoriMap
           : { ...state.subKategoriMap, ...res.subKategoriMap };
+        if (Array.isArray(state.subKategoriMap['__BANNER_SLIDES__']) && state.subKategoriMap['__BANNER_SLIDES__'].length > 0) {
+          state.bannerSlides = state.subKategoriMap['__BANNER_SLIDES__'];
+        }
       }
       if (res.pengaturanBayar && typeof res.pengaturanBayar === 'object') {
         state.pengaturanBayar = { ...state.pengaturanBayar, ...res.pengaturanBayar };
@@ -1539,10 +1669,128 @@
 
     function renderAllUI() {
       renderHeaderLogo();
+      renderBannerSlider();
       renderFlashSale();
       renderCategories();
       renderProductCatalog();
       updateCartBadges();
+    }
+
+    // FUNGSI BANNER SLIDER / CAROUSEL
+    function renderBannerSlider() {
+      const track = document.getElementById('heroBannerTrack');
+      const dotsContainer = document.getElementById('heroBannerDots');
+      if (!track || !dotsContainer) return;
+
+      const slides = (Array.isArray(state.bannerSlides) && state.bannerSlides.length > 0)
+        ? state.bannerSlides
+        : DEFAULT_BANNER_SLIDES;
+
+      if (state.currentBannerIndex >= slides.length) {
+        state.currentBannerIndex = 0;
+      }
+
+      const visibleProductsCount = state.produk.filter(p => isProductVisibleOnWeb(p)).length;
+
+      track.innerHTML = slides.map((s, idx) => {
+        const themeClass = s.theme || 'from-Hibualamo to-orange-500';
+        const ratingText = s.rating || '4.9';
+        return `
+          <div class="w-full shrink-0 bg-gradient-to-r ${escapeHtmlAttr(themeClass)} p-4 sm:p-6 pb-7 sm:pb-7 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1.5 max-w-xl">
+              <span class="inline-block bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                ${escapeHtmlAttr(s.badge || 'Promo Spesial Hari Ini')}
+              </span>
+              <h2 class="text-lg sm:text-2xl font-extrabold leading-tight">${escapeHtmlAttr(s.title || '')}</h2>
+              <p class="text-xs sm:text-sm text-orange-100">${escapeHtmlAttr(s.subtitle || '')}</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
+                <div class="text-[10px] text-orange-100">Total Produk</div>
+                <div ${idx === 0 ? 'id="heroProductCount"' : ''} class="hero-product-count text-base font-extrabold">${visibleProductsCount}</div>
+              </div>
+              <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
+                <div class="text-[10px] text-orange-100">Rating Toko</div>
+                <div class="text-base font-extrabold text-yellow-300"><i class="fa-solid fa-star text-xs"></i> ${escapeHtmlAttr(ratingText)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (slides.length > 1) {
+        dotsContainer.innerHTML = slides.map((_, idx) => {
+          const isActive = idx === state.currentBannerIndex;
+          return `
+            <button
+              type="button"
+              data-banner-dot="${idx}"
+              aria-label="Slide ${idx + 1}"
+              class="h-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive ? 'w-5 bg-yellow-300' : 'w-1.5 bg-white/50 hover:bg-white/80'}"
+            ></button>
+          `;
+        }).join('');
+      } else {
+        dotsContainer.innerHTML = '';
+      }
+
+      updateBannerSlidePosition();
+      startBannerAutoSlide();
+    }
+
+    function updateBannerSlidePosition() {
+      const track = document.getElementById('heroBannerTrack');
+      const dotsContainer = document.getElementById('heroBannerDots');
+      const slides = (Array.isArray(state.bannerSlides) && state.bannerSlides.length > 0)
+        ? state.bannerSlides
+        : DEFAULT_BANNER_SLIDES;
+
+      if (state.currentBannerIndex >= slides.length) state.currentBannerIndex = 0;
+      if (state.currentBannerIndex < 0) state.currentBannerIndex = slides.length - 1;
+
+      if (track) {
+        track.style.transform = `translateX(-${state.currentBannerIndex * 100}%)`;
+      }
+
+      if (dotsContainer && slides.length > 1) {
+        const dotBtns = dotsContainer.querySelectorAll('[data-banner-dot]');
+        dotBtns.forEach((btn, idx) => {
+          const isActive = idx === state.currentBannerIndex;
+          btn.className = `h-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive ? 'w-5 bg-yellow-300' : 'w-1.5 bg-white/50 hover:bg-white/80'}`;
+        });
+      }
+    }
+
+    function moveBannerSlide(step) {
+      const slides = (Array.isArray(state.bannerSlides) && state.bannerSlides.length > 0)
+        ? state.bannerSlides
+        : DEFAULT_BANNER_SLIDES;
+      if (slides.length <= 1) return;
+      state.currentBannerIndex = (state.currentBannerIndex + step + slides.length) % slides.length;
+      updateBannerSlidePosition();
+      startBannerAutoSlide();
+    }
+
+    function goToBannerSlide(index) {
+      const slides = (Array.isArray(state.bannerSlides) && state.bannerSlides.length > 0)
+        ? state.bannerSlides
+        : DEFAULT_BANNER_SLIDES;
+      if (index < 0 || index >= slides.length) return;
+      state.currentBannerIndex = index;
+      updateBannerSlidePosition();
+      startBannerAutoSlide();
+    }
+
+    function startBannerAutoSlide() {
+      if (bannerAutoSlideTimer) clearInterval(bannerAutoSlideTimer);
+      const slides = (Array.isArray(state.bannerSlides) && state.bannerSlides.length > 0)
+        ? state.bannerSlides
+        : DEFAULT_BANNER_SLIDES;
+      if (slides.length <= 1) return;
+      bannerAutoSlideTimer = setInterval(() => {
+        state.currentBannerIndex = (state.currentBannerIndex + 1) % slides.length;
+        updateBannerSlidePosition();
+      }, 4500);
     }
 
     function renderHeaderLogo() {
@@ -1723,6 +1971,9 @@
 
       const visibleProducts = state.produk.filter(p => isProductVisibleOnWeb(p));
       if (heroCount) heroCount.textContent = visibleProducts.length;
+      document.querySelectorAll('.hero-product-count').forEach(el => {
+        el.textContent = visibleProducts.length;
+      });
 
       let filtered = visibleProducts.filter(p => {
         const matchCat = state.selectedCategory === 'Semua' || p.kategori === state.selectedCategory;
@@ -2270,6 +2521,7 @@
       populateAdminSelects();
       renderAdminOrders();
       renderAdminProductList();
+      renderAdminBannerList();
       renderAdminReviewsList();
       renderAdminSupplierList();
       renderAdminCategoryList();
@@ -2300,6 +2552,7 @@
       const tabs = {
         orders: { btn: 'tabAdminOrders', panel: 'adminOrdersPanel' },
         addProduct: { btn: 'tabAdminAddProduct', panel: 'adminAddProductPanel' },
+        banners: { btn: 'tabAdminBanners', panel: 'adminBannersPanel' },
         reviews: { btn: 'tabAdminReviews', panel: 'adminReviewsPanel' },
         suppliers: { btn: 'tabAdminSuppliers', panel: 'adminSuppliersPanel' },
         categories: { btn: 'tabAdminCategories', panel: 'adminCategoriesPanel' },
@@ -2318,6 +2571,139 @@
           if (panelEl) panelEl.classList.add('hidden');
         }
       });
+    }
+
+    // KELOLA BANNER SLIDER DI PANEL ADMIN
+    function resetAdminBannerForm() {
+      const idEl = document.getElementById('admBannerId');
+      const badgeEl = document.getElementById('admBannerBadge');
+      const titleEl = document.getElementById('admBannerTitle');
+      const subEl = document.getElementById('admBannerSubtitle');
+      const ratingEl = document.getElementById('admBannerRating');
+      const themeEl = document.getElementById('admBannerTheme');
+      const formTitle = document.getElementById('admBannerFormTitle');
+      const cancelBtn = document.getElementById('btnCancelEditBanner');
+
+      if (idEl) idEl.value = '';
+      if (badgeEl) badgeEl.value = '';
+      if (titleEl) titleEl.value = '';
+      if (subEl) subEl.value = '';
+      if (ratingEl) ratingEl.value = '4.9';
+      if (themeEl) themeEl.value = 'from-Hibualamo to-orange-500';
+      if (formTitle) formTitle.textContent = 'Tambah / Edit Slide Banner Promo';
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+    }
+
+    function renderAdminBannerList() {
+      const container = document.getElementById('adminBannerListContainer');
+      const countEl = document.getElementById('adminBannerCount');
+      const slides = Array.isArray(state.bannerSlides) ? state.bannerSlides : [];
+      if (countEl) countEl.textContent = slides.length;
+      if (!container) return;
+
+      container.innerHTML = slides.map((s, idx) => `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Slide ${idx + 1}: ${escapeHtmlAttr(s.badge)}</span>
+              <span class="text-[10px] text-slate-400">Rating: ★ ${escapeHtmlAttr(s.rating || '4.9')}</span>
+            </div>
+            <div class="font-extrabold text-slate-800">${escapeHtmlAttr(s.title)}</div>
+            <div class="text-slate-500">${escapeHtmlAttr(s.subtitle)}</div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" data-admin-edit-banner="${escapeHtmlAttr(s.id)}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+              Edit
+            </button>
+            ${slides.length > 1 ? `
+              <button type="button" data-admin-del-banner="${escapeHtmlAttr(s.id)}" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                Hapus
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function adminStartEditBanner(bannerId) {
+      const slide = (state.bannerSlides || []).find(s => String(s.id) === String(bannerId));
+      if (!slide) return;
+      document.getElementById('admBannerId').value = slide.id;
+      document.getElementById('admBannerBadge').value = slide.badge || '';
+      document.getElementById('admBannerTitle').value = slide.title || '';
+      document.getElementById('admBannerSubtitle').value = slide.subtitle || '';
+      document.getElementById('admBannerRating').value = slide.rating || '4.9';
+      document.getElementById('admBannerTheme').value = slide.theme || 'from-Hibualamo to-orange-500';
+      const formTitle = document.getElementById('admBannerFormTitle');
+      if (formTitle) formTitle.textContent = 'Edit Slide Banner: ' + slide.badge;
+      document.getElementById('btnCancelEditBanner')?.classList.remove('hidden');
+    }
+
+    async function syncBannersToServer() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      state.subKategoriMap['__BANNER_SLIDES__'] = state.bannerSlides;
+      saveLocalState();
+      await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
+    }
+
+    async function adminSaveBanner() {
+      const editId = document.getElementById('admBannerId')?.value.trim() || '';
+      const badge = document.getElementById('admBannerBadge')?.value.trim() || 'Promo Spesial Hari Ini';
+      const title = document.getElementById('admBannerTitle')?.value.trim() || '';
+      const subtitle = document.getElementById('admBannerSubtitle')?.value.trim() || '';
+      const rating = document.getElementById('admBannerRating')?.value.trim() || '4.9';
+      const theme = document.getElementById('admBannerTheme')?.value || 'from-Hibualamo to-orange-500';
+
+      if (!title || !subtitle) {
+        showToast('Judul dan Subjudul Banner wajib diisi!', 'error');
+        return;
+      }
+
+      const slideObj = {
+        id: editId || ('BNR-' + Date.now()),
+        badge,
+        title,
+        subtitle,
+        rating,
+        theme
+      };
+
+      if (editId) {
+        const idx = state.bannerSlides.findIndex(s => String(s.id) === String(editId));
+        if (idx !== -1) state.bannerSlides[idx] = slideObj;
+      } else {
+        state.bannerSlides.push(slideObj);
+        state.currentBannerIndex = state.bannerSlides.length - 1;
+      }
+
+      resetAdminBannerForm();
+      renderBannerSlider();
+      renderAdminBannerList();
+      await syncBannersToServer();
+      showToast('Slide Banner berhasil disimpan!', 'success');
+    }
+
+    async function adminDeleteBanner(bannerId) {
+      if ((state.bannerSlides || []).length <= 1) {
+        showToast('Minimal harus ada 1 slide banner aktif!', 'error');
+        return;
+      }
+      state.bannerSlides = state.bannerSlides.filter(s => String(s.id) !== String(bannerId));
+      state.currentBannerIndex = 0;
+      renderBannerSlider();
+      renderAdminBannerList();
+      await syncBannersToServer();
+      showToast('Slide Banner berhasil dihapus.', 'info');
+    }
+
+    async function adminResetDefaultBanners() {
+      state.bannerSlides = [...DEFAULT_BANNER_SLIDES];
+      state.currentBannerIndex = 0;
+      resetAdminBannerForm();
+      renderBannerSlider();
+      renderAdminBannerList();
+      await syncBannersToServer();
+      showToast('Banner Slider dikembalikan ke 3 slide default!', 'info');
     }
 
     function populateAdminSelects() {
@@ -3095,6 +3481,7 @@
 
       const subs = rawSubs.split(',').map(s => s.trim()).filter(Boolean);
       state.subKategoriMap[parentCat] = subs;
+      state.subKategoriMap['__BANNER_SLIDES__'] = state.bannerSlides;
 
       const pin = state.verifiedAdminPin || state.localAdminPin;
       await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
@@ -3173,6 +3560,7 @@
         for (const prod of localCustomProducts) {
           await callServer('adminSaveProduct', pin, prod);
         }
+        state.subKategoriMap['__BANNER_SLIDES__'] = state.bannerSlides;
         if (state.subKategoriMap && Object.keys(state.subKategoriMap).length > 0) {
           await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
         }
@@ -3181,6 +3569,7 @@
       await initStoreData();
       renderAdminProductList();
       renderAdminCategoryList();
+      renderAdminBannerList();
       populateAdminSelects();
       showToast('Sinkronisasi Google Apps Script selesai!', 'success');
     }
@@ -3397,6 +3786,30 @@
       initVisitorTracking();
       renderLiveChat();
 
+      // Interaksi Hover & Swipe pada Banner Slider
+      const bannerSliderEl = document.getElementById('heroBannerSlider');
+      if (bannerSliderEl) {
+        bannerSliderEl.addEventListener('mouseenter', () => {
+          if (bannerAutoSlideTimer) clearInterval(bannerAutoSlideTimer);
+        });
+        bannerSliderEl.addEventListener('mouseleave', () => {
+          startBannerAutoSlide();
+        });
+        bannerSliderEl.addEventListener('touchstart', (e) => {
+          if (e.touches && e.touches.length > 0) {
+            bannerTouchStartX = e.touches[0].clientX;
+          }
+        }, { passive: true });
+        bannerSliderEl.addEventListener('touchend', (e) => {
+          if (e.changedTouches && e.changedTouches.length > 0) {
+            const diffX = e.changedTouches[0].clientX - bannerTouchStartX;
+            if (Math.abs(diffX) > 40) {
+              moveBannerSlide(diffX < 0 ? 1 : -1);
+            }
+          }
+        }, { passive: true });
+      }
+
       // Sinkronisasi real-time otomatis untuk browser/tab lain setiap 8 detik
       setInterval(() => {
         if (document.visibilityState === 'visible') {
@@ -3491,6 +3904,24 @@
       document.body.addEventListener('click', async (e) => {
         if (e.target.closest('[data-action="logo-secret-admin"]')) {
           handleSecretLogoClick();
+          return;
+        }
+
+        const bannerDotBtn = e.target.closest('[data-banner-dot]');
+        if (bannerDotBtn) {
+          goToBannerSlide(Number(bannerDotBtn.getAttribute('data-banner-dot')));
+          return;
+        }
+
+        const editBannerBtn = e.target.closest('[data-admin-edit-banner]');
+        if (editBannerBtn) {
+          adminStartEditBanner(editBannerBtn.getAttribute('data-admin-edit-banner'));
+          return;
+        }
+
+        const delBannerBtn = e.target.closest('[data-admin-del-banner]');
+        if (delBannerBtn) {
+          adminDeleteBanner(delBannerBtn.getAttribute('data-admin-del-banner'));
           return;
         }
 
@@ -3670,6 +4101,21 @@
         const action = actionEl.getAttribute('data-action');
 
         switch (action) {
+          case 'banner-prev':
+            moveBannerSlide(-1);
+            break;
+          case 'banner-next':
+            moveBannerSlide(1);
+            break;
+          case 'admin-save-banner':
+            adminSaveBanner();
+            break;
+          case 'admin-cancel-edit-banner':
+            resetAdminBannerForm();
+            break;
+          case 'admin-reset-default-banners':
+            adminResetDefaultBanners();
+            break;
           case 'admin-reset-order-date':
             state.adminOrderDateFilter = '';
             renderAdminOrders();
