@@ -15,8 +15,9 @@
             sans: ['Inter', 'sans-serif']
           },
           colors: {
-            Hibualamo: '#ee4d2d',
-            HibualamoDark: '#d73211'
+            Hibualamo: '#1d4ed8',
+            HibualamoDark: '#1e3a8a',
+            HibualamoGold: '#f59e0b'
           }
         }
       }
@@ -47,17 +48,17 @@
 <body class="min-h-screen flex flex-col">
 
   <!-- TOP BAR -->
-  <div class="bg-HibualamoDark text-white text-[11px] py-1.5 px-3 sm:px-6">
+  <div class="bg-HibualamoDark text-white text-[11px] py-1.5 px-3 sm:px-6 border-b border-blue-800">
     <div class="max-w-6xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <i class="fa-solid fa-shield-halved text-yellow-300"></i>
+        <i class="fa-solid fa-shield-halved text-amber-400"></i>
         <span>Selamat Datang di Official <strong>Hibualamo Shop</strong> — Jaminan Produk Original & Pengiriman Cepat</span>
       </div>
       <div class="hidden sm:flex items-center gap-4">
-        <button type="button" data-action="open-track-modal" class="hover:underline flex items-center gap-1 cursor-pointer">
-          <i class="fa-solid fa-truck-fast"></i> Lacak Pesanan
+        <button type="button" data-action="open-track-modal" class="hover:text-amber-300 transition flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-truck-fast text-amber-400"></i> Lacak Pesanan
         </button>
-        <a href="https://datasupplier.vercel.app/" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-center gap-1 cursor-pointer text-yellow-300 font-bold">
+        <a href="https://datasupplier.vercel.app/" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-center gap-1 cursor-pointer text-amber-400 font-bold">
           <i class="fa-solid fa-handshake"></i> Jadi Mitra Web
         </a>
       </div>
@@ -65,7 +66,7 @@
   </div>
 
   <!-- HEADER UTAMA -->
-  <header class="bg-Hibualamo text-white sticky top-0 z-30 shadow-md">
+  <header class="bg-gradient-to-r from-HibualamoDark via-Hibualamo to-blue-600 text-white sticky top-0 z-30 shadow-md border-b-2 border-amber-400">
     <div class="max-w-6xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
       <!-- LOGO (KLIK 10X UNTUK ADMIN PANEL) -->
       <div
@@ -74,13 +75,15 @@
         title="Hibualamo Shop"
         class="flex items-center gap-2.5 cursor-pointer select-none shrink-0 group"
       >
-        <div class="w-10 h-10 rounded-xl bg-white text-Hibualamo flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-white text-Hibualamo ring-2 ring-amber-400 flex items-center justify-center shadow-sm overflow-hidden shrink-0">
           <img id="headerLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer">
           <i id="headerLogoDefaultIcon" class="fa-solid fa-bag-shopping text-xl"></i>
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-extrabold tracking-tight leading-none">Hibualamo Shop</h1>
-          <p class="text-[10px] text-orange-100 font-medium mt-0.5">Belanja Hemat Setiap Hari</p>
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight leading-none flex items-center gap-1.5">
+            <span>Hibualamo Shop</span>
+          </h1>
+          <p class="text-[10px] text-amber-300 font-semibold mt-0.5">Belanja Hemat Setiap Hari</p>
         </div>
       </div>
 
@@ -91,7 +94,7 @@
             id="searchInput"
             type="text"
             placeholder="Cari produk di Hibualamo Shop..."
-            class="w-full pl-3.5 pr-9 py-2 rounded-xl bg-white text-slate-800 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 shadow-inner"
+            class="w-full pl-3.5 pr-9 py-2 rounded-xl bg-white text-slate-800 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
           >
           <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-Hibualamo text-sm"></i>
         </div>
@@ -102,10 +105,10 @@
         <button
           type="button"
           data-action="open-track-modal"
-          class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+          class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-white/15"
           title="Lacak Pesanan"
         >
-          <i class="fa-solid fa-box-open text-sm"></i>
+          <i class="fa-solid fa-box-open text-amber-300 text-sm"></i>
           <span class="hidden md:inline">Lacak Pesanan</span>
         </button>
 
@@ -113,23 +116,23 @@
           href="https://datasupplier.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
-          class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+          class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-white/15"
           title="Jadi Mitra Web"
         >
-          <i class="fa-solid fa-handshake text-sm"></i>
+          <i class="fa-solid fa-handshake text-amber-300 text-sm"></i>
           <span class="hidden md:inline">Jadi Mitra Web</span>
         </a>
 
         <button
           type="button"
           data-action="open-cart-modal"
-          class="relative bg-white text-Hibualamo hover:bg-orange-50 px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+          class="relative bg-amber-400 hover:bg-amber-300 text-slate-900 px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
         >
-          <i class="fa-solid fa-cart-shopping text-sm"></i>
+          <i class="fa-solid fa-cart-shopping text-sm text-HibualamoDark"></i>
           <span class="hidden sm:inline">Keranjang</span>
           <span
             id="cartBadge"
-            class="bg-slate-900 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
+            class="bg-HibualamoDark text-amber-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[20px] text-center"
           >0</span>
         </button>
       </div>
@@ -350,7 +353,9 @@
         <div id="adminBannersPanel" class="hidden space-y-4 text-xs">
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
             <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 id="admBannerFormTitle" class="font-extrabold text-slate-800 text-sm">Tambah / Edit Slide Banner Promo</h3>
+              <h3 id="admBannerFormTitle" class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-images text-Hibualamo"></i> Tambah / Edit Manual Slide Banner Promo
+              </h3>
               <button id="btnCancelEditBanner" type="button" data-action="admin-cancel-edit-banner" class="hidden text-red-600 font-bold hover:underline cursor-pointer">
                 Batal Edit
               </button>
@@ -358,7 +363,7 @@
             <input id="admBannerId" type="hidden" value="">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Teks Badge Kuning *</label>
+                <label class="block font-bold text-slate-700 mb-1">Teks Badge Gold/Amber *</label>
                 <input id="admBannerBadge" type="text" placeholder="Contoh: PROMO SPESIAL HARI INI" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
               </div>
               <div>
@@ -368,12 +373,12 @@
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Tema Warna Banner</label>
                 <select id="admBannerTheme" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-semibold">
-                  <option value="from-Hibualamo to-orange-500">Oranye Hibualamo (Utama)</option>
-                  <option value="from-HibualamoDark to-orange-500">Merah Oranye Hangat</option>
-                  <option value="from-orange-600 to-amber-500">Oranye Keemasan</option>
-                  <option value="from-rose-600 to-orange-500">Merah Promo Spesial</option>
-                  <option value="from-emerald-600 to-teal-500">Hijau Segar</option>
-                  <option value="from-indigo-600 to-blue-500">Biru Elektronik</option>
+                  <option value="from-HibualamoDark via-Hibualamo to-blue-600">Royal Blue Elegance (Utama)</option>
+                  <option value="from-slate-900 via-blue-900 to-Hibualamo">Royal Navy & Gold Luxury</option>
+                  <option value="from-blue-800 via-indigo-700 to-amber-600">Royal Blue & Amber Promo</option>
+                  <option value="from-amber-500 via-amber-600 to-yellow-600">Gold Amber Eksklusif</option>
+                  <option value="from-emerald-700 to-teal-600">Emerald Fresh</option>
+                  <option value="from-rose-700 to-red-600">Crimson Flash Sale</option>
                 </select>
               </div>
               <div class="sm:col-span-3">
@@ -385,9 +390,41 @@
                 <input id="admBannerSubtitle" type="text" placeholder="Contoh: Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
               </div>
             </div>
-            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <button type="button" data-action="admin-save-banner" class="bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold px-4 py-2 rounded-xl cursor-pointer">
-                <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Slide Banner
+
+            <!-- UPLOAD GAMBAR BANNER KE GOOGLE DRIVE -->
+            <div class="space-y-2 pt-1 border-t border-slate-200/80">
+              <label class="block font-bold text-slate-700">Gambar Banner (Upload ke Google Drive / Tempel URL)</label>
+              <div class="flex flex-wrap gap-2">
+                <input
+                  id="admBannerGambar"
+                  type="text"
+                  placeholder="Tempel URL gambar atau klik tombol Upload ke Google Drive..."
+                  class="flex-1 min-w-[220px] px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                >
+                <label class="bg-Hibualamo hover:bg-HibualamoDark text-white font-bold px-3.5 py-2 rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs transition">
+                  <i class="fa-brands fa-google-drive text-amber-300"></i> Upload ke Google Drive
+                  <input id="admBannerFileInput" type="file" accept="image/*" class="hidden">
+                </label>
+                <button
+                  id="btnClearBannerImage"
+                  type="button"
+                  data-action="admin-clear-banner-image"
+                  class="hidden bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-2 rounded-lg cursor-pointer"
+                >
+                  <i class="fa-solid fa-trash-can mr-1"></i> Hapus Gambar
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-500">
+                * Gambar yang di-upload akan otomatis tersimpan di folder <strong>Hibualamo_Store_Assets</strong> pada Google Drive Anda.
+              </p>
+              <div id="admBannerImagePreviewWrap" class="hidden pt-1">
+                <img id="admBannerImagePreview" src="" alt="Preview Banner" class="h-28 w-auto max-w-full object-cover rounded-xl border-2 border-amber-400 shadow-xs bg-white">
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <button type="button" data-action="admin-save-banner" class="bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold px-4 py-2.5 rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-floppy-disk text-amber-300"></i> Simpan Slide Banner
               </button>
               <button type="button" data-action="admin-reset-default-banners" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl cursor-pointer">
                 Reset ke Default (3 Slide)
@@ -477,7 +514,7 @@
 
         <!-- 6. PANEL PENGATURAN TOKO & KONEKSI GAS -->
         <div id="adminPaymentPanel" class="hidden space-y-4 text-xs">
-          <div class="bg-orange-50/70 p-4 rounded-xl border border-orange-200 space-y-2">
+          <div class="bg-blue-50/70 p-4 rounded-xl border border-blue-200 space-y-2">
             <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
               <i class="fa-solid fa-database text-Hibualamo"></i> Sinkronisasi Database Google Apps Script (`kode.gs`)
             </h3>
@@ -567,25 +604,25 @@
     </section>
 
     <!-- BANNER PROMO SLIDER -->
-    <section id="heroBannerSlider" class="relative rounded-2xl overflow-hidden shadow-sm group select-none">
+    <section id="heroBannerSlider" class="relative rounded-2xl overflow-hidden shadow-md border border-blue-200/60 group select-none">
       <div id="heroBannerTrack" class="flex transition-transform duration-500 ease-out">
         <!-- Slide Default (Akan di-render otomatis oleh sistem slider) -->
-        <div class="w-full shrink-0 bg-gradient-to-r from-Hibualamo to-orange-500 p-4 sm:p-6 pb-7 sm:pb-7 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="w-full shrink-0 bg-gradient-to-r from-HibualamoDark via-Hibualamo to-blue-600 p-4 sm:p-6 pb-7 sm:pb-7 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div class="space-y-1.5 max-w-xl">
-            <span class="inline-block bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <span class="inline-block bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
               Promo Spesial Hari Ini
             </span>
             <h2 class="text-lg sm:text-2xl font-extrabold leading-tight">Belanja Kebutuhan Harian & Elektronik Lebih Hemat!</h2>
-            <p class="text-xs sm:text-sm text-orange-100">Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.</p>
+            <p class="text-xs sm:text-sm text-blue-100">Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.</p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
-              <div class="text-[10px] text-orange-100">Total Produk</div>
-              <div id="heroProductCount" class="hero-product-count text-base font-extrabold">8+</div>
+            <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-amber-300/40">
+              <div class="text-[10px] text-blue-100">Total Produk</div>
+              <div id="heroProductCount" class="hero-product-count text-base font-extrabold text-amber-300">8+</div>
             </div>
-            <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
-              <div class="text-[10px] text-orange-100">Rating Toko</div>
-              <div class="text-base font-extrabold text-yellow-300"><i class="fa-solid fa-star text-xs"></i> 4.9</div>
+            <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-amber-300/40">
+              <div class="text-[10px] text-blue-100">Rating Toko</div>
+              <div class="text-base font-extrabold text-amber-300"><i class="fa-solid fa-star text-xs"></i> 4.9</div>
             </div>
           </div>
         </div>
@@ -614,11 +651,11 @@
     </section>
 
     <!-- FLASH SALE / PRODUK TERLARIS -->
-    <section id="flashSaleSection" class="bg-white rounded-2xl p-3.5 sm:p-4 border border-orange-200/80 shadow-sm space-y-3">
+    <section id="flashSaleSection" class="bg-white rounded-2xl p-3.5 sm:p-4 border border-amber-300/80 shadow-sm space-y-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="bg-Hibualamo text-white text-xs font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1">
-            <i class="fa-solid fa-bolt text-yellow-300"></i> PRODUK TERLARIS
+          <span class="bg-gradient-to-r from-HibualamoDark to-Hibualamo text-white text-xs font-extrabold px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-xs border border-amber-400/50">
+            <i class="fa-solid fa-bolt text-amber-300"></i> PRODUK TERLARIS
           </span>
           <span class="text-xs text-slate-500 hidden sm:inline">Paling banyak dibeli minggu ini</span>
         </div>
@@ -746,7 +783,7 @@
           </div>
 
           <!-- INFO REKENING / QRIS -->
-          <div id="paymentInfoBox" class="hidden bg-orange-50 p-3 rounded-xl border border-orange-200 space-y-2"></div>
+          <div id="paymentInfoBox" class="hidden bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2"></div>
 
           <div>
             <label class="block font-bold text-slate-700 mb-1">Catatan Pesanan (Opsional)</label>
@@ -913,24 +950,27 @@
         badge: 'Promo Spesial Hari Ini',
         title: 'Belanja Kebutuhan Harian & Elektronik Lebih Hemat!',
         subtitle: 'Nikmati harga grosir langsung dari tangan pertama, bisa COD & pengiriman instan.',
-        theme: 'from-Hibualamo to-orange-500',
-        rating: '4.9'
+        theme: 'from-HibualamoDark via-Hibualamo to-blue-600',
+        rating: '4.9',
+        image: ''
       },
       {
         id: 'BNR-002',
         badge: 'Flash Sale & Harga Grosir',
         title: 'Diskon Spesial Produk Terlaris Minggu Ini!',
         subtitle: 'Dapatkan harga terbaik untuk elektronik, fashion, dan kebutuhan rumah tangga pilihan.',
-        theme: 'from-HibualamoDark to-orange-500',
-        rating: '4.9'
+        theme: 'from-slate-900 via-blue-900 to-Hibualamo',
+        rating: '4.9',
+        image: ''
       },
       {
         id: 'BNR-003',
         badge: 'Layanan Cepat & Aman',
         title: 'Bisa Bayar di Tempat (COD) & Pengiriman Instan!',
         subtitle: 'Pesanan diproses cepat setiap hari dengan jaminan produk 100% original & berkualitas.',
-        theme: 'from-orange-600 to-amber-500',
-        rating: '4.9'
+        theme: 'from-blue-800 via-indigo-700 to-amber-600',
+        rating: '4.9',
+        image: ''
       }
     ];
 
@@ -1677,6 +1717,20 @@
     }
 
     // FUNGSI BANNER SLIDER / CAROUSEL
+    function normalizeBannerTheme(themeStr) {
+      const raw = String(themeStr || '').trim();
+      if (!raw || raw === 'from-Hibualamo to-orange-500') {
+        return 'from-HibualamoDark via-Hibualamo to-blue-600';
+      }
+      if (raw === 'from-HibualamoDark to-orange-500') {
+        return 'from-slate-900 via-blue-900 to-Hibualamo';
+      }
+      if (raw === 'from-orange-600 to-amber-500') {
+        return 'from-blue-800 via-indigo-700 to-amber-600';
+      }
+      return raw;
+    }
+
     function renderBannerSlider() {
       const track = document.getElementById('heroBannerTrack');
       const dotsContainer = document.getElementById('heroBannerDots');
@@ -1693,25 +1747,41 @@
       const visibleProductsCount = state.produk.filter(p => isProductVisibleOnWeb(p)).length;
 
       track.innerHTML = slides.map((s, idx) => {
-        const themeClass = s.theme || 'from-Hibualamo to-orange-500';
+        const themeClass = normalizeBannerTheme(s.theme);
         const ratingText = s.rating || '4.9';
+        const bannerImgUrl = convertDriveUrl(s.image || s.gambar || '');
+
         return `
-          <div class="w-full shrink-0 bg-gradient-to-r ${escapeHtmlAttr(themeClass)} p-4 sm:p-6 pb-7 sm:pb-7 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="space-y-1.5 max-w-xl">
-              <span class="inline-block bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                ${escapeHtmlAttr(s.badge || 'Promo Spesial Hari Ini')}
+          <div class="w-full shrink-0 bg-gradient-to-r ${escapeHtmlAttr(themeClass)} p-4 sm:p-6 pb-8 sm:pb-7 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+            <div class="space-y-1.5 max-w-xl z-10">
+              <span class="inline-flex items-center gap-1 bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                <i class="fa-solid fa-crown text-[9px]"></i> ${escapeHtmlAttr(s.badge || 'Promo Spesial Hari Ini')}
               </span>
-              <h2 class="text-lg sm:text-2xl font-extrabold leading-tight">${escapeHtmlAttr(s.title || '')}</h2>
-              <p class="text-xs sm:text-sm text-orange-100">${escapeHtmlAttr(s.subtitle || '')}</p>
+              <h2 class="text-lg sm:text-2xl font-extrabold leading-tight drop-shadow-xs">${escapeHtmlAttr(s.title || '')}</h2>
+              <p class="text-xs sm:text-sm text-blue-100">${escapeHtmlAttr(s.subtitle || '')}</p>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
-                <div class="text-[10px] text-orange-100">Total Produk</div>
-                <div ${idx === 0 ? 'id="heroProductCount"' : ''} class="hero-product-count text-base font-extrabold">${visibleProductsCount}</div>
-              </div>
-              <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-white/20">
-                <div class="text-[10px] text-orange-100">Rating Toko</div>
-                <div class="text-base font-extrabold text-yellow-300"><i class="fa-solid fa-star text-xs"></i> ${escapeHtmlAttr(ratingText)}</div>
+
+            <div class="flex items-center gap-3 shrink-0 z-10 w-full sm:w-auto justify-between sm:justify-end">
+              ${bannerImgUrl ? `
+                <div class="w-28 h-20 sm:w-44 sm:h-28 rounded-xl overflow-hidden border-2 border-amber-400/90 shadow-lg bg-white/10 shrink-0">
+                  <img
+                    src="${escapeHtmlAttr(bannerImgUrl)}"
+                    alt="${escapeHtmlAttr(s.title || 'Banner Promo')}"
+                    referrerpolicy="no-referrer"
+                    onerror="this.parentElement.style.display='none'"
+                    class="w-full h-full object-cover"
+                  >
+                </div>
+              ` : ''}
+              <div class="flex items-center gap-2 shrink-0">
+                <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-amber-300/40">
+                  <div class="text-[10px] text-blue-100">Total Produk</div>
+                  <div ${idx === 0 ? 'id="heroProductCount"' : ''} class="hero-product-count text-base font-extrabold text-amber-300">${visibleProductsCount}</div>
+                </div>
+                <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl text-center border border-amber-300/40">
+                  <div class="text-[10px] text-blue-100">Rating Toko</div>
+                  <div class="text-base font-extrabold text-amber-300"><i class="fa-solid fa-star text-xs"></i> ${escapeHtmlAttr(ratingText)}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -1726,7 +1796,7 @@
               type="button"
               data-banner-dot="${idx}"
               aria-label="Slide ${idx + 1}"
-              class="h-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive ? 'w-5 bg-yellow-300' : 'w-1.5 bg-white/50 hover:bg-white/80'}"
+              class="h-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive ? 'w-5 bg-amber-400' : 'w-1.5 bg-white/50 hover:bg-white/80'}"
             ></button>
           `;
         }).join('');
@@ -1756,7 +1826,7 @@
         const dotBtns = dotsContainer.querySelectorAll('[data-banner-dot]');
         dotBtns.forEach((btn, idx) => {
           const isActive = idx === state.currentBannerIndex;
-          btn.className = `h-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive ? 'w-5 bg-yellow-300' : 'w-1.5 bg-white/50 hover:bg-white/80'}`;
+          btn.className = `h-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive ? 'w-5 bg-amber-400' : 'w-1.5 bg-white/50 hover:bg-white/80'}`;
         });
       }
     }
@@ -1829,15 +1899,15 @@
                 src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
                 alt="${escapeHtmlAttr(p.nama)}"
                 referrerpolicy="no-referrer"
-                onerror="this.src='https://placehold.co/400x400/ee4d2d/ffffff?text=Produk'"
+                onerror="this.src='https://placehold.co/400x400/1d4ed8/ffffff?text=Produk'"
                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
               >
               ${diskonPersen > 0 ? `
-                <span class="absolute top-1.5 right-1.5 bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-xs flash-badge">
+                <span class="absolute top-1.5 right-1.5 bg-amber-400 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-xs flash-badge">
                   -${diskonPersen}%
                 </span>
               ` : ''}
-              <span class="absolute top-1.5 left-1.5 bg-Hibualamo text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-xs">
+              <span class="absolute top-1.5 left-1.5 bg-Hibualamo text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-xs border border-amber-300/40">
                 ${escapeHtmlAttr(p.badge || 'Star+')}
               </span>
             </div>
@@ -1952,7 +2022,7 @@
             data-subcategory="${escapeHtmlAttr(sub)}"
             class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition shrink-0 cursor-pointer ${
               activeSub
-                ? 'bg-orange-100 text-Hibualamo border border-Hibualamo/40'
+                ? 'bg-amber-100 text-HibualamoDark border border-amber-400'
                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
             }"
           >
@@ -2050,7 +2120,7 @@
               src="${escapeHtmlAttr(convertDriveUrl(p.gambar))}"
               alt="${escapeHtmlAttr(p.nama)}"
               referrerpolicy="no-referrer"
-              onerror="this.src='https://placehold.co/600x600/ee4d2d/ffffff?text=Produk'"
+              onerror="this.src='https://placehold.co/600x600/1d4ed8/ffffff?text=Produk'"
               class="w-full h-full object-cover"
             >
           </div>
@@ -2072,11 +2142,11 @@
                 <span>Stok: <strong>${Number(p.stok || 0)}</strong></span>
               </div>
 
-              <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-baseline gap-2">
+              <div class="bg-blue-50 p-3 rounded-xl border border-blue-200 flex items-baseline gap-2">
                 <span class="text-lg sm:text-xl font-extrabold text-Hibualamo">${formatRupiah(p.hargaDiskon)}</span>
                 ${p.hargaAsli > p.hargaDiskon ? `
                   <span class="text-xs text-slate-400 line-through">${formatRupiah(p.hargaAsli)}</span>
-                  <span class="bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded">-${diskonPersen}%</span>
+                  <span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded">-${diskonPersen}%</span>
                 ` : ''}
               </div>
 
@@ -2090,7 +2160,7 @@
                       data-detail-variant="${escapeHtmlAttr(v)}"
                       class="px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
                         state.selectedDetailVariant === v
-                          ? 'border-Hibualamo bg-orange-50 text-Hibualamo'
+                          ? 'border-Hibualamo bg-blue-50 text-Hibualamo ring-1 ring-amber-400'
                           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                       }"
                     >
@@ -2115,14 +2185,14 @@
               <button
                 type="button"
                 data-action="add-detail-to-cart"
-                class="py-2.5 px-3 rounded-xl border-2 border-Hibualamo text-Hibualamo hover:bg-orange-50 font-extrabold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                class="py-2.5 px-3 rounded-xl border-2 border-Hibualamo text-Hibualamo hover:bg-blue-50 font-extrabold text-xs cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <i class="fa-solid fa-cart-plus"></i> + Keranjang
               </button>
               <button
                 type="button"
                 data-action="buy-now-detail"
-                class="py-2.5 px-3 rounded-xl bg-Hibualamo hover:bg-HibualamoDark text-white font-extrabold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                class="py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
               >
                 Beli Sekarang
               </button>
@@ -2581,6 +2651,10 @@
       const subEl = document.getElementById('admBannerSubtitle');
       const ratingEl = document.getElementById('admBannerRating');
       const themeEl = document.getElementById('admBannerTheme');
+      const imgEl = document.getElementById('admBannerGambar');
+      const previewWrap = document.getElementById('admBannerImagePreviewWrap');
+      const previewImg = document.getElementById('admBannerImagePreview');
+      const clearImgBtn = document.getElementById('btnClearBannerImage');
       const formTitle = document.getElementById('admBannerFormTitle');
       const cancelBtn = document.getElementById('btnCancelEditBanner');
 
@@ -2589,9 +2663,166 @@
       if (titleEl) titleEl.value = '';
       if (subEl) subEl.value = '';
       if (ratingEl) ratingEl.value = '4.9';
-      if (themeEl) themeEl.value = 'from-Hibualamo to-orange-500';
-      if (formTitle) formTitle.textContent = 'Tambah / Edit Slide Banner Promo';
+      if (themeEl) themeEl.value = 'from-HibualamoDark via-Hibualamo to-blue-600';
+      if (imgEl) imgEl.value = '';
+      if (previewImg) previewImg.src = '';
+      if (previewWrap) previewWrap.classList.add('hidden');
+      if (clearImgBtn) clearImgBtn.classList.add('hidden');
+      if (formTitle) formTitle.innerHTML = '<i class="fa-solid fa-images text-Hibualamo"></i> Tambah / Edit Manual Slide Banner Promo';
       if (cancelBtn) cancelBtn.classList.add('hidden');
+    }
+
+    function renderAdminBannerList() {
+      const container = document.getElementById('adminBannerListContainer');
+      const countEl = document.getElementById('adminBannerCount');
+      const slides = Array.isArray(state.bannerSlides) ? state.bannerSlides : [];
+      if (countEl) countEl.textContent = slides.length;
+      if (!container) return;
+
+      container.innerHTML = slides.map((s, idx) => {
+        const bannerImgUrl = convertDriveUrl(s.image || s.gambar || '');
+        return `
+          <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-3 min-w-0">
+              ${bannerImgUrl ? `
+                <img
+                  src="${escapeHtmlAttr(bannerImgUrl)}"
+                  alt="Banner ${idx + 1}"
+                  referrerpolicy="no-referrer"
+                  onerror="this.style.display='none'"
+                  class="w-20 h-14 rounded-lg object-cover border border-amber-400 shrink-0 bg-slate-100"
+                >
+              ` : `
+                <div class="w-20 h-14 rounded-lg bg-gradient-to-r ${escapeHtmlAttr(normalizeBannerTheme(s.theme))} flex items-center justify-center text-amber-300 font-extrabold text-[10px] shrink-0 border border-slate-200">
+                  SLIDE ${idx + 1}
+                </div>
+              `}
+              <div class="space-y-0.5 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Slide ${idx + 1}: ${escapeHtmlAttr(s.badge)}</span>
+                  <span class="text-[10px] text-slate-400">Rating: ★ ${escapeHtmlAttr(s.rating || '4.9')}</span>
+                  ${bannerImgUrl ? `<span class="text-[10px] bg-blue-50 text-Hibualamo font-bold px-2 py-0.5 rounded"><i class="fa-brands fa-google-drive mr-1"></i>Gambar Aktif</span>` : ''}
+                </div>
+                <div class="font-extrabold text-slate-800 truncate">${escapeHtmlAttr(s.title)}</div>
+                <div class="text-slate-500 truncate">${escapeHtmlAttr(s.subtitle)}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" data-admin-edit-banner="${escapeHtmlAttr(s.id)}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                Edit
+              </button>
+              ${slides.length > 1 ? `
+                <button type="button" data-admin-del-banner="${escapeHtmlAttr(s.id)}" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                  Hapus
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function adminStartEditBanner(bannerId) {
+      const slide = (state.bannerSlides || []).find(s => String(s.id) === String(bannerId));
+      if (!slide) return;
+      document.getElementById('admBannerId').value = slide.id;
+      document.getElementById('admBannerBadge').value = slide.badge || '';
+      document.getElementById('admBannerTitle').value = slide.title || '';
+      document.getElementById('admBannerSubtitle').value = slide.subtitle || '';
+      document.getElementById('admBannerRating').value = slide.rating || '4.9';
+      document.getElementById('admBannerTheme').value = normalizeBannerTheme(slide.theme);
+
+      const imgUrl = slide.image || slide.gambar || '';
+      const imgInput = document.getElementById('admBannerGambar');
+      const previewWrap = document.getElementById('admBannerImagePreviewWrap');
+      const previewImg = document.getElementById('admBannerImagePreview');
+      const clearBtn = document.getElementById('btnClearBannerImage');
+
+      if (imgInput) imgInput.value = imgUrl;
+      if (imgUrl) {
+        if (previewImg) previewImg.src = convertDriveUrl(imgUrl);
+        if (previewWrap) previewWrap.classList.remove('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+      } else {
+        if (previewImg) previewImg.src = '';
+        if (previewWrap) previewWrap.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.add('hidden');
+      }
+
+      const formTitle = document.getElementById('admBannerFormTitle');
+      if (formTitle) formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square text-Hibualamo"></i> Edit Slide Banner: ${escapeHtmlAttr(slide.badge)}`;
+      document.getElementById('btnCancelEditBanner')?.classList.remove('hidden');
+    }
+
+    async function processBannerImageUpload(base64Data, fileName, mimeType) {
+      const imgInput = document.getElementById('admBannerGambar');
+      const previewWrap = document.getElementById('admBannerImagePreviewWrap');
+      const previewImg = document.getElementById('admBannerImagePreview');
+      const clearBtn = document.getElementById('btnClearBannerImage');
+
+      if (imgInput) imgInput.value = base64Data;
+      if (previewImg) previewImg.src = base64Data;
+      if (previewWrap) previewWrap.classList.remove('hidden');
+      if (clearBtn) clearBtn.classList.remove('hidden');
+
+      showToast('Mengunggah gambar banner ke Google Drive...', 'info');
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      const safeName = 'banner_' + Date.now() + '_' + (fileName || 'slide.jpg');
+      // Parameter ke-5 (skipServerAi = true) agar gambar banner asli langsung disimpan ke Google Drive tanpa diubah AI produk
+      const res = await callServer('adminUploadImageToDrive', pin, base64Data, safeName, mimeType || 'image/jpeg', true);
+      if (res && res.success && res.url) {
+        if (imgInput) imgInput.value = res.url;
+        if (previewImg) previewImg.src = convertDriveUrl(res.url);
+        showToast('Gambar banner berhasil diunggah & tersimpan di Google Drive!', 'success');
+      } else {
+        showToast('Gambar banner siap digunakan! Klik Simpan Slide Banner.', 'info');
+      }
+    }
+
+    async function syncBannersToServer() {
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      state.subKategoriMap['__BANNER_SLIDES__'] = state.bannerSlides;
+      saveLocalState();
+      await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
+    }
+
+    async function adminSaveBanner() {
+      const editId = document.getElementById('admBannerId')?.value.trim() || '';
+      const badge = document.getElementById('admBannerBadge')?.value.trim() || 'Promo Spesial Hari Ini';
+      const title = document.getElementById('admBannerTitle')?.value.trim() || '';
+      const subtitle = document.getElementById('admBannerSubtitle')?.value.trim() || '';
+      const rating = document.getElementById('admBannerRating')?.value.trim() || '4.9';
+      const theme = document.getElementById('admBannerTheme')?.value || 'from-HibualamoDark via-Hibualamo to-blue-600';
+      const image = document.getElementById('admBannerGambar')?.value.trim() || '';
+
+      if (!title || !subtitle) {
+        showToast('Judul dan Subjudul Banner wajib diisi!', 'error');
+        return;
+      }
+
+      const slideObj = {
+        id: editId || ('BNR-' + Date.now()),
+        badge,
+        title,
+        subtitle,
+        rating,
+        theme,
+        image
+      };
+
+      if (editId) {
+        const idx = state.bannerSlides.findIndex(s => String(s.id) === String(editId));
+        if (idx !== -1) state.bannerSlides[idx] = slideObj;
+      } else {
+        state.bannerSlides.push(slideObj);
+        state.currentBannerIndex = state.bannerSlides.length - 1;
+      }
+
+      resetAdminBannerForm();
+      renderBannerSlider();
+      renderAdminBannerList();
+      await syncBannersToServer();
+      showToast('Slide Banner berhasil disimpan & disinkronkan!', 'success');
     }
 
     function renderAdminBannerList() {
@@ -3865,6 +4096,32 @@
         reader.readAsDataURL(file);
       });
 
+      document.getElementById('admBannerFileInput')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          processBannerImageUpload(ev.target.result, file.name, file.type || 'image/jpeg');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById('admBannerGambar')?.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        const previewWrap = document.getElementById('admBannerImagePreviewWrap');
+        const previewImg = document.getElementById('admBannerImagePreview');
+        const clearBtn = document.getElementById('btnClearBannerImage');
+        if (val) {
+          if (previewImg) previewImg.src = convertDriveUrl(val);
+          if (previewWrap) previewWrap.classList.remove('hidden');
+          if (clearBtn) clearBtn.classList.remove('hidden');
+        } else {
+          if (previewImg) previewImg.src = '';
+          if (previewWrap) previewWrap.classList.add('hidden');
+          if (clearBtn) clearBtn.classList.add('hidden');
+        }
+      });
+
       document.body.addEventListener('change', (e) => {
         if (e.target && e.target.id === 'admOrderDateFilterInput') {
           state.adminOrderDateFilter = e.target.value || '';
@@ -4113,6 +4370,17 @@
           case 'admin-cancel-edit-banner':
             resetAdminBannerForm();
             break;
+          case 'admin-clear-banner-image': {
+            const imgInput = document.getElementById('admBannerGambar');
+            const previewWrap = document.getElementById('admBannerImagePreviewWrap');
+            const previewImg = document.getElementById('admBannerImagePreview');
+            const clearBtn = document.getElementById('btnClearBannerImage');
+            if (imgInput) imgInput.value = '';
+            if (previewImg) previewImg.src = '';
+            if (previewWrap) previewWrap.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            break;
+          }
           case 'admin-reset-default-banners':
             adminResetDefaultBanners();
             break;
