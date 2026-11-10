@@ -138,10 +138,27 @@ function setSettingValue(key, value) {
 }
 
 function verifyPin(inputPin) {
+  const cleanInput = String(inputPin || '').trim();
+  if (!cleanInput) return false;
+
+  const cache = CacheService.getScriptCache();
+  const failKey = 'HIBUALAMO_PIN_FAILS';
+  const fails = Number(cache.get(failKey) || 0);
+  if (fails >= 8) {
+    throw new Error('Terlalu banyak percobaan login gagal. Coba lagi dalam 3 menit.');
+  }
+
   const settings = getSettingsMap();
   const savedPin = String(settings['Password_Admin'] || 'Jangan@123').trim();
-  const cleanInput = String(inputPin || '').trim();
-  return cleanInput === savedPin || cleanInput === 'Jangan@123';
+  const isValid = cleanInput === savedPin;
+
+  if (!isValid) {
+    cache.put(failKey, String(fails + 1), 180);
+    return false;
+  }
+
+  cache.remove(failKey);
+  return true;
 }
 
 function setupDatabaseIfNeeded() {
@@ -151,9 +168,13 @@ function setupDatabaseIfNeeded() {
 }
 
 /**
- * AMBIL DATA AWAL TOKO (MASTER DATA UNTUK SEMUA BROWSER)
+ * AMBIL DATA AWAL TOKO (PUBLIC DATA - DATA SENSITIF DISEMBUNYIKAN DARI INSPECT ELEMENT)
  */
 function getInitialData() {
+  return getStoreDataInternal(false);
+}
+
+function getStoreDataInternal(isAdmin) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss.getSheetByName('Produk')) {
     setupDatabaseIfNeeded();
@@ -180,7 +201,7 @@ function getInitialData() {
     } catch (e) {}
   }
 
-  // 1. Baca Produk
+  // 1. Baca Produk (Harga Supplier & Data Supplier hanya dikirim jika Admin sudah login)
   const sheetProduk = ss.getSheetByName('Produk');
   const produk = [];
   if (sheetProduk && sheetProduk.getLastRow() >= 2) {
@@ -205,7 +226,7 @@ function getInitialData() {
         nama: nama,
         kategori: mainKat,
         subKategori: subKat,
-        hargaSupplier: Number(r[3]) || 0,
+        hargaSupplier: isAdmin ? (Number(r[3]) || 0) : 0,
         hargaAsli: Number(r[4]) || Number(r[5]) || 0,
         hargaDiskon: Number(r[5]) || 0,
         stok: Number(r[6]) || 0,
@@ -216,8 +237,8 @@ function getInitialData() {
         isFlashSale: r[11] === true || String(r[11]).toUpperCase() === 'TRUE',
         badge: String(r[12] || 'Star+'),
         deskripsi: cleanDeskripsi,
-        idSupplier: String(r[14] || ''),
-        namaSupplier: String(r[15] || '-'),
+        idSupplier: isAdmin ? String(r[14] || '') : '',
+        namaSupplier: isAdmin ? String(r[15] || '-') : '-',
         isLocked: isLocked
       });
     });
@@ -243,25 +264,27 @@ function getInitialData() {
     });
   }
 
-  // 3. Baca Supplier
-  const sheetSupplier = ss.getSheetByName('Supplier');
+  // 3. Baca Supplier (Hanya dikirim ke Panel Admin)
   const supplier = [];
-  if (sheetSupplier && sheetSupplier.getLastRow() >= 2) {
-    const rows = sheetSupplier.getRange(2, 1, sheetSupplier.getLastRow() - 1, 5).getValues();
-    rows.forEach(r => {
-      const idSup = String(r[0] || '').trim();
-      if (!idSup) return;
-      supplier.push({
-        idSupplier: idSup,
-        namaSupplier: String(r[1] || '-'),
-        jenisSupplier: String(r[2] || '-'),
-        alamat: String(r[3] || '-'),
-        kontakPerson: String(r[4] || '-')
+  if (isAdmin) {
+    const sheetSupplier = ss.getSheetByName('Supplier');
+    if (sheetSupplier && sheetSupplier.getLastRow() >= 2) {
+      const rows = sheetSupplier.getRange(2, 1, sheetSupplier.getLastRow() - 1, 5).getValues();
+      rows.forEach(r => {
+        const idSup = String(r[0] || '').trim();
+        if (!idSup) return;
+        supplier.push({
+          idSupplier: idSup,
+          namaSupplier: String(r[1] || '-'),
+          jenisSupplier: String(r[2] || '-'),
+          alamat: String(r[3] || '-'),
+          kontakPerson: String(r[4] || '-')
+        });
       });
-    });
+    }
   }
 
-  // 4. Kategori & Pengaturan Pembayaran
+  // 4. Kategori & Pengaturan Pembayaran (API Key & Email disembunyikan dari publik)
   const rawKategori = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga');
   const kategoriList = rawKategori.split(',').map(k => k.trim()).filter(Boolean);
 
@@ -270,9 +293,9 @@ function getInitialData() {
     noRekening: String(settings['No_Rekening'] || 'Bank Mandiri - 1860000119434'),
     namaPemilikRekening: String(settings['Nama_Pemilik_Rekening'] || 'Andri Illa'),
     noWaAdmin: String(settings['No_WA_Admin'] || '08215075520'),
-    gmailPemilik: String(settings['Gmail_Pemilik'] || ''),
+    gmailPemilik: isAdmin ? String(settings['Gmail_Pemilik'] || '') : '',
     logoUrl: String(settings['Logo_Url'] || ''),
-    geminiApiKey: String(settings['Gemini_Api_Key'] || ''),
+    geminiApiKey: isAdmin ? String(settings['Gemini_Api_Key'] || '') : '',
     geminiAutoEnhance: String(settings['Gemini_Auto_Enhance'] || 'TRUE').toUpperCase() !== 'FALSE',
     geminiPrompt: String(settings['Gemini_Prompt'] || 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.')
   };
@@ -291,9 +314,24 @@ function getInitialData() {
 }
 
 /**
- * BUAT PESANAN BARU DARI PEMBELI
+ * BUAT PESANAN BARU DARI PEMBELI (DENGAN VALIDASI HARGA SERVER & ANTI-SPAM)
  */
 function createOrder(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return { success: false, message: 'Data pesanan tidak valid.' };
+  }
+
+  // Rate-limiter anti-spam pesanan
+  const cache = CacheService.getScriptCache();
+  const waClean = String(payload.noWa || '').replace(/\D/g, '');
+  if (waClean) {
+    const rateKey = 'ORDER_RATE_' + waClean;
+    if (cache.get(rateKey)) {
+      return { success: false, message: 'Mohon tunggu beberapa detik sebelum mengirim pesanan kembali.' };
+    }
+    cache.put(rateKey, '1', 8);
+  }
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheetPesanan = ss.getSheetByName('Pesanan');
   if (!sheetPesanan) {
@@ -303,13 +341,63 @@ function createOrder(payload) {
 
   const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
   const tanggal = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'dd/MM/yyyy HH:mm');
-  const items = Array.isArray(payload.items) ? payload.items : [];
-  const ringkasanItem = items.map(it => `${it.qty}x ${it.nama} (${it.varian || 'Standar'})`).join(', ');
+  const rawItems = Array.isArray(payload.items) ? payload.items : [];
 
-  const subtotal = Number(payload.subtotal) || 0;
-  const ongkir = Number(payload.ongkir) || 0;
-  const diskonVoucher = Number(payload.diskonVoucher) || 0;
-  const totalBayar = Number(payload.totalBayar) || (subtotal + ongkir - diskonVoucher);
+  // Validasi harga asli dari Sheet Produk & kurangi stok
+  const sheetProduk = ss.getSheetByName('Produk');
+  const priceMap = {};
+  let prodRows = [];
+  if (sheetProduk && sheetProduk.getLastRow() >= 2) {
+    prodRows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 8).getValues();
+    prodRows.forEach((r, idx) => {
+      const pid = String(r[0] || '').trim();
+      if (pid) {
+        priceMap[pid] = {
+          rowIndex: idx + 2,
+          nama: String(r[1] || '').trim(),
+          hargaDiskon: Number(r[5]) || Number(r[4]) || 0,
+          stok: Number(r[6]) || 0,
+          terjual: Number(r[7]) || 0
+        };
+      }
+    });
+  }
+
+  let verifiedSubtotal = 0;
+  const verifiedItems = rawItems.map(it => {
+    const pid = String(it.id || '').trim();
+    const qty = Math.max(1, Number(it.qty) || 1);
+    const dbProd = priceMap[pid];
+    const unitPrice = dbProd ? dbProd.hargaDiskon : (Number(it.harga) || 0);
+    const itemName = dbProd ? dbProd.nama : String(it.nama || 'Produk');
+    verifiedSubtotal += unitPrice * qty;
+
+    if (dbProd && sheetProduk) {
+      sheetProduk.getRange(dbProd.rowIndex, 7).setValue(Math.max(0, dbProd.stok - qty));
+      sheetProduk.getRange(dbProd.rowIndex, 8).setValue(dbProd.terjual + qty);
+      dbProd.stok = Math.max(0, dbProd.stok - qty);
+      dbProd.terjual = dbProd.terjual + qty;
+    }
+
+    return {
+      id: pid,
+      nama: itemName,
+      harga: unitPrice,
+      varian: String(it.varian || 'Standar'),
+      qty: qty
+    };
+  });
+
+  const ringkasanItem = verifiedItems.map(it => `${it.qty}x ${it.nama} (${it.varian || 'Standar'})`).join(', ');
+  const subtotal = verifiedSubtotal > 0 ? verifiedSubtotal : (Number(payload.subtotal) || 0);
+  const ongkir = Math.max(0, Number(payload.ongkir) || 0);
+  const diskonVoucher = Math.max(0, Number(payload.diskonVoucher) || 0);
+  const totalBayar = Math.max(0, subtotal + ongkir - diskonVoucher);
+
+  let metodeBayar = String(payload.metodeBayar || 'COD');
+  if (subtotal >= 50000 && metodeBayar.toUpperCase().indexOf('COD') !== -1) {
+    metodeBayar = 'Transfer Bank';
+  }
 
   const rowData = [
     orderId,
@@ -318,37 +406,19 @@ function createOrder(payload) {
     String(payload.noWa || ''),
     String(payload.alamat || ''),
     String(payload.catatan || '-'),
-    JSON.stringify(items),
+    JSON.stringify(verifiedItems),
     ringkasanItem,
     subtotal,
     ongkir,
     diskonVoucher,
     totalBayar,
     String(payload.kurir || 'Kurir Toko'),
-    String(payload.metodeBayar || 'COD'),
+    metodeBayar,
     'Belum Bayar',
     '-'
   ];
 
   sheetPesanan.appendRow(rowData);
-
-  // Kurangi stok & tambah terjual pada Sheet Produk
-  const sheetProduk = ss.getSheetByName('Produk');
-  if (sheetProduk && sheetProduk.getLastRow() >= 2) {
-    const prodRows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 8).getValues();
-    items.forEach(item => {
-      for (let i = 0; i < prodRows.length; i++) {
-        if (String(prodRows[i][0]).trim() === String(item.id).trim()) {
-          const currentStok = Number(prodRows[i][6]) || 0;
-          const currentTerjual = Number(prodRows[i][7]) || 0;
-          const qty = Number(item.qty) || 1;
-          sheetProduk.getRange(i + 2, 7).setValue(Math.max(0, currentStok - qty));
-          sheetProduk.getRange(i + 2, 8).setValue(currentTerjual + qty);
-          break;
-        }
-      }
-    });
-  }
 
   // Kirim notifikasi email ke pemilik jika diatur
   try {
@@ -368,7 +438,7 @@ function createOrder(payload) {
           `Alamat: ${payload.alamat}\n` +
           `Item: ${ringkasanItem}\n` +
           `Total Tagihan: Rp${totalBayar.toLocaleString('id-ID')}\n` +
-          `Metode Bayar: ${payload.metodeBayar}\n`
+          `Metode Bayar: ${metodeBayar}\n`
       });
     }
   } catch (e) {}
@@ -382,13 +452,13 @@ function createOrder(payload) {
       noWa: payload.noWa,
       alamat: payload.alamat,
       catatan: payload.catatan || '-',
-      items: items,
+      items: verifiedItems,
       ringkasanItem: ringkasanItem,
       subtotal: subtotal,
       ongkir: ongkir,
       totalBayar: totalBayar,
       kurir: payload.kurir,
-      metodeBayar: payload.metodeBayar,
+      metodeBayar: metodeBayar,
       status: 'Belum Bayar',
       noResi: '-'
     }
@@ -526,7 +596,7 @@ function adminGetOrders(pin) {
     }
   }
 
-  const initData = getInitialData();
+  const initData = getStoreDataInternal(true);
 
   return {
     success: true,
