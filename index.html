@@ -975,19 +975,14 @@
     ];
 
     const MOCK_DATA = {
-      supplier: [
-        { idSupplier: 'SUP-001', namaSupplier: 'PT Sumber Elektronik Jaya', jenisSupplier: 'Distributor Resmi', alamat: 'Jl. Mangga Dua Raya No. 18, Jakarta Pusat', kontakPerson: 'Bpk. Hendra (081299887766)' },
-        { idSupplier: 'SUP-002', namaSupplier: 'CV Konveksi Nusantara', jenisSupplier: 'Produsen Lokal', alamat: 'Jl. Cigondewah Kidul No. 42, Kota Bandung', kontakPerson: 'Ibu Rina (081322334455)' },
-        { idSupplier: 'SUP-003', namaSupplier: 'UD Pangan Nusantara Mandiri', jenisSupplier: 'Grosir / Produsen', alamat: 'Jl. Soekarno Hatta No. 89, Bandar Lampung', kontakPerson: 'Bpk. Anton (081566778899)' },
-        { idSupplier: 'SUP-004', namaSupplier: 'Global Living Importir', jenisSupplier: 'Importir', alamat: 'Kawasan Pergudangan Pantai Indah Dadap, Tangerang', kontakPerson: 'Bpk. Kevin (081122339988)' }
-      ],
+      supplier: [],
       produk: [
         {
           id: 'PRD-001',
           nama: 'TWS Earbuds Bluetooth 5.3 Bass Hifi Waterproof IPX5 Gaming Low Latency',
           kategori: 'Elektronik',
           subKategori: 'Audio',
-          hargaSupplier: 65000,
+          hargaSupplier: 0,
           hargaAsli: 250000,
           hargaDiskon: 99000,
           stok: 45,
@@ -998,15 +993,15 @@
           isFlashSale: true,
           badge: 'Mall',
           deskripsi: 'TWS Bluetooth 5.3 generasi terbaru dengan suara Super Bass jernih, baterai tahan hingga 24 jam bersama charging case, dan fitur gaming mode tanpa delay.',
-          idSupplier: 'SUP-001',
-          namaSupplier: 'PT Sumber Elektronik Jaya'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-002',
           nama: 'Kemeja Flanel Pria Lengan Panjang Premium Casual Distro Kotak-Kotak',
           kategori: 'Fashion',
           subKategori: 'Pakaian Pria',
-          hargaSupplier: 58000,
+          hargaSupplier: 0,
           hargaAsli: 185000,
           hargaDiskon: 89000,
           stok: 80,
@@ -1017,15 +1012,15 @@
           isFlashSale: true,
           badge: 'Star+',
           deskripsi: 'Bahan katun flanel import tebal, adem, dan tidak mudah berbulu. Cocok untuk kuliah, kerja santai, maupun hangout.',
-          idSupplier: 'SUP-002',
-          namaSupplier: 'CV Konveksi Nusantara'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-003',
           nama: 'Smartwatch Sport AMOLED Jam Tangan Pintar Heart Rate Monitor Waterproof',
           kategori: 'Elektronik',
           subKategori: 'Gadget',
-          hargaSupplier: 135000,
+          hargaSupplier: 0,
           hargaAsli: 450000,
           hargaDiskon: 195000,
           stok: 25,
@@ -1036,15 +1031,15 @@
           isFlashSale: true,
           badge: 'Mall',
           deskripsi: 'Layar sentuh penuh HD AMOLED 1.85 inch dengan pemantau detak jantung 24 jam, penghitung langkah, notifikasi WhatsApp, dan tahan air IP68.',
-          idSupplier: 'SUP-001',
-          namaSupplier: 'PT Sumber Elektronik Jaya'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-004',
           nama: 'Sepatu Sneakers Running Olahraga Pria Wanita Breathable Ringan',
           kategori: 'Fashion',
           subKategori: 'Sepatu',
-          hargaSupplier: 95000,
+          hargaSupplier: 0,
           hargaAsli: 320000,
           hargaDiskon: 149000,
           stok: 60,
@@ -1055,15 +1050,15 @@
           isFlashSale: false,
           badge: 'Star+',
           deskripsi: 'Desain ergonomis dengan sol karet anti selip dan bahan rajut berpori yang membuat kaki tetap sejuk saat berlari atau jalan jauh.',
-          idSupplier: 'SUP-002',
-          namaSupplier: 'CV Konveksi Nusantara'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-005',
           nama: 'Keripik Pisang Coklat Lumer Lampung Kemasan Pouch 250gr Crispy',
           kategori: 'Makanan',
           subKategori: 'Cemilan',
-          hargaSupplier: 18000,
+          hargaSupplier: 0,
           hargaAsli: 45000,
           hargaDiskon: 28000,
           stok: 150,
@@ -1074,15 +1069,15 @@
           isFlashSale: true,
           badge: 'Star+',
           deskripsi: 'Keripik pisang kepok pilihan yang renyah dengan balutan bubuk dan saus coklat premium tebal. Tanpa bahan pengawet, halal dan bikin nagih!',
-          idSupplier: 'SUP-003',
-          namaSupplier: 'UD Pangan Nusantara Mandiri'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-006',
           nama: 'Tas Ransel Laptop Backpack Waterproof Anti Maling USB Port 15.6 Inch',
           kategori: 'Aksesoris',
           subKategori: 'Tas',
-          hargaSupplier: 75000,
+          hargaSupplier: 0,
           hargaAsli: 210000,
           hargaDiskon: 115000,
           stok: 40,
@@ -1093,15 +1088,15 @@
           isFlashSale: false,
           badge: 'Mall',
           deskripsi: 'Kapasitas besar dengan kompartemen khusus laptop hingga 15.6 inci, bahan Oxford tahan cipratan air, dan dilengkapi port USB eksternal.',
-          idSupplier: 'SUP-004',
-          namaSupplier: 'Global Living Importir'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-007',
           nama: 'Lampu Meja Belajar LED Rechargeable Touch Dimmer Eye Protection',
           kategori: 'Rumah Tangga',
           subKategori: 'Penerangan',
-          hargaSupplier: 38000,
+          hargaSupplier: 0,
           hargaAsli: 120000,
           hargaDiskon: 59000,
           stok: 95,
@@ -1112,15 +1107,15 @@
           isFlashSale: false,
           badge: 'Star+',
           deskripsi: 'Lampu baca LED dengan 3 tingkat kecerahan sentuh, leher fleksibel 360 derajat, serta baterai tanam yang dapat diisi ulang via kabel Type-C.',
-          idSupplier: 'SUP-004',
-          namaSupplier: 'Global Living Importir'
+          idSupplier: '',
+          namaSupplier: '-'
         },
         {
           id: 'PRD-008',
           nama: 'Kopi Arabika Gayo Aceh Specialty 250gr Biji / Bubuk Fresh Roast',
           kategori: 'Makanan',
           subKategori: 'Minuman',
-          hargaSupplier: 45000,
+          hargaSupplier: 0,
           hargaAsli: 95000,
           hargaDiskon: 68000,
           stok: 70,
@@ -1131,8 +1126,8 @@
           isFlashSale: false,
           badge: 'Mall',
           deskripsi: '100% Kopi Arabika Gayo asli dari dataran tinggi Aceh. Dipanggang medium roast dengan aroma rempah dan coklat yang khas.',
-          idSupplier: 'SUP-003',
-          namaSupplier: 'UD Pangan Nusantara Mandiri'
+          idSupplier: '',
+          namaSupplier: '-'
         }
       ],
       voucher: [],
@@ -1182,7 +1177,7 @@
         geminiPrompt: 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.'
       },
       savedGasApiUrl: '',
-      localAdminPin: 'Jangan@123',
+      localAdminPin: '',
       verifiedAdminPin: '',
       logoClickCount: 0,
       logoClickTimer: null,
@@ -1295,16 +1290,23 @@
       return Boolean(getActiveGasApiUrl());
     }
 
-    function verifyLocalPin(inputPin) {
-      const clean = String(inputPin || '').trim();
-      return clean === String(state.localAdminPin || 'Jangan@123').trim() || clean === 'Jangan@123';
-    }
-
     function saveLocalState() {
       try {
-        localStorage.setItem('HibualamoStore_produk', JSON.stringify(state.produk));
+        // Sanitasi data produk & pengaturan sebelum disimpan ke localStorage agar harga modal & API Key aman dari Inspect Element
+        const publicProduk = state.produk.map(p => ({
+          ...p,
+          hargaSupplier: 0,
+          idSupplier: '',
+          namaSupplier: '-'
+        }));
+        const publicPay = {
+          ...state.pengaturanBayar,
+          geminiApiKey: '',
+          gmailPemilik: ''
+        };
+
+        localStorage.setItem('HibualamoStore_produk', JSON.stringify(publicProduk));
         localStorage.setItem('HibualamoStore_ulasan', JSON.stringify(state.ulasan));
-        localStorage.setItem('HibualamoStore_supplier', JSON.stringify(state.supplier));
         localStorage.setItem('HibualamoStore_bannerSlides', JSON.stringify(state.bannerSlides));
         localStorage.setItem('HibualamoStore_kategoriList', JSON.stringify(state.kategoriList));
         localStorage.setItem('HibualamoStore_subKategoriMap', JSON.stringify(state.subKategoriMap));
@@ -1312,13 +1314,12 @@
         localStorage.setItem('HibualamoStore_localOrders', JSON.stringify(state.localOrders));
         localStorage.setItem('HibualamoStore_lockedProductIds', JSON.stringify(state.lockedProductIds));
         localStorage.setItem('HibualamoStore_hideDummyProducts', JSON.stringify(Boolean(state.hideDummyProducts)));
-        localStorage.setItem('HibualamoStore_pengaturanBayar', JSON.stringify(state.pengaturanBayar));
+        localStorage.setItem('HibualamoStore_pengaturanBayar', JSON.stringify(publicPay));
         if (state.savedGasApiUrl) {
           localStorage.setItem('HibualamoStore_gasApiUrl', state.savedGasApiUrl);
         }
-        if (state.localAdminPin) {
-          localStorage.setItem('HibualamoStore_adminPin', state.localAdminPin);
-        }
+        localStorage.removeItem('HibualamoStore_adminPin');
+        localStorage.removeItem('HibualamoStore_supplier');
       } catch (e) {}
     }
 
@@ -1326,9 +1327,6 @@
       try {
         const savedGas = localStorage.getItem('HibualamoStore_gasApiUrl');
         if (savedGas) state.savedGasApiUrl = savedGas.trim();
-
-        const savedPin = localStorage.getItem('HibualamoStore_adminPin');
-        if (savedPin) state.localAdminPin = savedPin;
 
         const savedHideDummy = localStorage.getItem('HibualamoStore_hideDummyProducts');
         if (savedHideDummy !== null) state.hideDummyProducts = JSON.parse(savedHideDummy) === true;
@@ -2568,21 +2566,17 @@
       }
 
       const res = await callServer('adminGetOrders', inputPin);
-      if (!res || !res.success) {
-        if (!verifyLocalPin(inputPin)) {
-          showToast(res?.message || 'Password / PIN Admin salah!', 'error');
-          return;
-        }
+      if (!res || !res.success || !Array.isArray(res.orders)) {
+        showToast(res?.message || 'Password / PIN Admin salah!', 'error');
+        return;
       }
 
       state.verifiedAdminPin = inputPin;
       closeModal('adminPinModal');
 
-      if (res && res.success) {
-        applyServerDataToState(res, isRemoteServerConnected());
-        if (Array.isArray(res.orders) && res.orders.length > 0) state.localOrders = res.orders;
-        if (res.visitorStats) state.visitorStats = res.visitorStats;
-      }
+      applyServerDataToState(res, isRemoteServerConnected());
+      if (Array.isArray(res.orders) && res.orders.length > 0) state.localOrders = res.orders;
+      if (res.visitorStats) state.visitorStats = res.visitorStats;
 
       saveLocalState();
       renderAllUI();
@@ -2823,95 +2817,6 @@
       renderAdminBannerList();
       await syncBannersToServer();
       showToast('Slide Banner berhasil disimpan & disinkronkan!', 'success');
-    }
-
-    function renderAdminBannerList() {
-      const container = document.getElementById('adminBannerListContainer');
-      const countEl = document.getElementById('adminBannerCount');
-      const slides = Array.isArray(state.bannerSlides) ? state.bannerSlides : [];
-      if (countEl) countEl.textContent = slides.length;
-      if (!container) return;
-
-      container.innerHTML = slides.map((s, idx) => `
-        <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div class="space-y-0.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="bg-yellow-300 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Slide ${idx + 1}: ${escapeHtmlAttr(s.badge)}</span>
-              <span class="text-[10px] text-slate-400">Rating: ★ ${escapeHtmlAttr(s.rating || '4.9')}</span>
-            </div>
-            <div class="font-extrabold text-slate-800">${escapeHtmlAttr(s.title)}</div>
-            <div class="text-slate-500">${escapeHtmlAttr(s.subtitle)}</div>
-          </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" data-admin-edit-banner="${escapeHtmlAttr(s.id)}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg cursor-pointer">
-              Edit
-            </button>
-            ${slides.length > 1 ? `
-              <button type="button" data-admin-del-banner="${escapeHtmlAttr(s.id)}" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg cursor-pointer">
-                Hapus
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function adminStartEditBanner(bannerId) {
-      const slide = (state.bannerSlides || []).find(s => String(s.id) === String(bannerId));
-      if (!slide) return;
-      document.getElementById('admBannerId').value = slide.id;
-      document.getElementById('admBannerBadge').value = slide.badge || '';
-      document.getElementById('admBannerTitle').value = slide.title || '';
-      document.getElementById('admBannerSubtitle').value = slide.subtitle || '';
-      document.getElementById('admBannerRating').value = slide.rating || '4.9';
-      document.getElementById('admBannerTheme').value = slide.theme || 'from-Hibualamo to-orange-500';
-      const formTitle = document.getElementById('admBannerFormTitle');
-      if (formTitle) formTitle.textContent = 'Edit Slide Banner: ' + slide.badge;
-      document.getElementById('btnCancelEditBanner')?.classList.remove('hidden');
-    }
-
-    async function syncBannersToServer() {
-      const pin = state.verifiedAdminPin || state.localAdminPin;
-      state.subKategoriMap['__BANNER_SLIDES__'] = state.bannerSlides;
-      saveLocalState();
-      await callServer('adminSaveSubCategories', pin, state.subKategoriMap);
-    }
-
-    async function adminSaveBanner() {
-      const editId = document.getElementById('admBannerId')?.value.trim() || '';
-      const badge = document.getElementById('admBannerBadge')?.value.trim() || 'Promo Spesial Hari Ini';
-      const title = document.getElementById('admBannerTitle')?.value.trim() || '';
-      const subtitle = document.getElementById('admBannerSubtitle')?.value.trim() || '';
-      const rating = document.getElementById('admBannerRating')?.value.trim() || '4.9';
-      const theme = document.getElementById('admBannerTheme')?.value || 'from-Hibualamo to-orange-500';
-
-      if (!title || !subtitle) {
-        showToast('Judul dan Subjudul Banner wajib diisi!', 'error');
-        return;
-      }
-
-      const slideObj = {
-        id: editId || ('BNR-' + Date.now()),
-        badge,
-        title,
-        subtitle,
-        rating,
-        theme
-      };
-
-      if (editId) {
-        const idx = state.bannerSlides.findIndex(s => String(s.id) === String(editId));
-        if (idx !== -1) state.bannerSlides[idx] = slideObj;
-      } else {
-        state.bannerSlides.push(slideObj);
-        state.currentBannerIndex = state.bannerSlides.length - 1;
-      }
-
-      resetAdminBannerForm();
-      renderBannerSlider();
-      renderAdminBannerList();
-      await syncBannersToServer();
-      showToast('Slide Banner berhasil disimpan!', 'success');
     }
 
     async function adminDeleteBanner(bannerId) {
