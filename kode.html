@@ -85,6 +85,7 @@ function getActionHandlers() {
     adminSaveSupplier: adminSaveSupplier,
     adminDeleteSupplier: adminDeleteSupplier,
     adminAddCategory: adminAddCategory,
+    adminEditCategory: adminEditCategory,
     adminDeleteCategory: adminDeleteCategory,
     adminSaveSubCategories: adminSaveSubCategories,
     adminSetHideDummy: adminSetHideDummy,
@@ -574,8 +575,9 @@ function adminGetOrders(pin) {
       const r = rows[i];
       if (!r[0]) continue;
       const statusPesanan = String(r[14] || 'Belum Bayar').trim();
-      // Transaksi yang sudah Selesai otomatis tidak ditampilkan di daftar Pesanan Masuk
-      if (statusPesanan.toLowerCase() === 'selesai') continue;
+      const statusLower = statusPesanan.toLowerCase();
+      // Transaksi yang sudah Selesai atau Dibatalkan otomatis tidak ditampilkan di daftar Pesanan Masuk
+      if (statusLower === 'selesai' || statusLower === 'dibatalkan') continue;
 
       orders.push({
         idPesanan: String(r[0]),
@@ -1008,6 +1010,84 @@ function adminAddCategory(pin, namaKat) {
   }
 
   return { success: true, kategoriList: list, message: 'Kategori berhasil ditambahkan!' };
+}
+
+function adminEditCategory(pin, oldKat, newKat) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const cleanOld = String(oldKat || '').trim();
+  const cleanNew = String(newKat || '').trim();
+  if (!cleanOld || !cleanNew) {
+    return { success: false, message: 'Nama kategori tidak valid!' };
+  }
+
+  const settings = getSettingsMap();
+  const rawList = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+
+  const updatedList = [];
+  rawList.forEach(k => {
+    const target = k === cleanOld ? cleanNew : k;
+    if (updatedList.indexOf(target) === -1) {
+      updatedList.push(target);
+    }
+  });
+  setSettingValue('Kategori', updatedList.join(','));
+
+  // Perbarui map Sub_Kategori jika ada
+  let subKategoriMap = {};
+  if (settings['Sub_Kategori']) {
+    try {
+      const parsed = JSON.parse(String(settings['Sub_Kategori']));
+      if (parsed && typeof parsed === 'object') subKategoriMap = parsed;
+    } catch (e) {}
+  }
+  if (subKategoriMap[cleanOld]) {
+    const existingSubs = Array.isArray(subKategoriMap[cleanNew]) ? subKategoriMap[cleanNew] : [];
+    const oldSubs = Array.isArray(subKategoriMap[cleanOld]) ? subKategoriMap[cleanOld] : [];
+    const mergedSubs = existingSubs.slice();
+    oldSubs.forEach(s => {
+      if (mergedSubs.indexOf(s) === -1) mergedSubs.push(s);
+    });
+    subKategoriMap[cleanNew] = mergedSubs;
+    delete subKategoriMap[cleanOld];
+    setSettingValue('Sub_Kategori', JSON.stringify(subKategoriMap));
+  }
+
+  // Perbarui nama kategori di Sheet Produk
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetProduk = ss.getSheetByName('Produk');
+  if (sheetProduk && sheetProduk.getLastRow() >= 2) {
+    const lastRow = sheetProduk.getLastRow();
+    const katRange = sheetProduk.getRange(2, 3, lastRow - 1, 1);
+    const katValues = katRange.getValues();
+    let changed = false;
+
+    for (let i = 0; i < katValues.length; i++) {
+      const rawKat = String(katValues[i][0] || '').trim();
+      const parts = rawKat.split('::');
+      const mainKat = String(parts[0] || '').trim();
+      const subKat = String(parts[1] || '').trim();
+      if (mainKat === cleanOld) {
+        katValues[i][0] = subKat ? (cleanNew + '::' + subKat) : cleanNew;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      katRange.setValues(katValues);
+    }
+  }
+
+  SpreadsheetApp.flush();
+  return {
+    success: true,
+    kategoriList: updatedList,
+    subKategoriMap: subKategoriMap,
+    message: 'Kategori berhasil diperbarui!'
+  };
 }
 
 function adminDeleteCategory(pin, namaKat) {
