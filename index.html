@@ -312,7 +312,15 @@
 
           <!-- DAFTAR PRODUK DI ADMIN -->
           <div class="space-y-2">
-            <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Daftar Katalog Produk (<span id="adminProductCount">0</span>)</h4>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Daftar Katalog Produk (<span id="adminProductCount">0</span>)</h4>
+              <div class="flex items-center gap-2 text-xs">
+                <label for="admFilterProdKategori" class="font-bold text-slate-600">Filter Kategori:</label>
+                <select id="admFilterProdKategori" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-slate-700">
+                  <option value="Semua">Semua Kategori</option>
+                </select>
+              </div>
+            </div>
             <div id="adminProductListContainer" class="space-y-2"></div>
           </div>
         </div>
@@ -1182,6 +1190,8 @@
       selectedDetailVariant: 'Standar',
       detailQty: 1,
       editingProductId: '',
+      adminProductCategoryFilter: 'Semua',
+      editingCategoryName: '',
       cameraTargetProductId: '',
       editingReviewId: '',
       adminOrderDateFilter: '',
@@ -2822,6 +2832,7 @@
 
     function populateAdminSelects() {
       const katSelect = document.getElementById('admProdKategori');
+      const filterKatSelect = document.getElementById('admFilterProdKategori');
       const subParentSelect = document.getElementById('admSubParentCat');
       const supSelect = document.getElementById('admProdSupplier');
       const revProdSelect = document.getElementById('admRevProduk');
@@ -2829,6 +2840,14 @@
       if (katSelect) {
         katSelect.innerHTML = state.kategoriList.map(k => `<option value="${escapeHtmlAttr(k)}">${escapeHtmlAttr(k)}</option>`).join('');
         populateAdminSubCategoryOptions(katSelect.value);
+      }
+
+      if (filterKatSelect) {
+        if (state.adminProductCategoryFilter !== 'Semua' && !state.kategoriList.includes(state.adminProductCategoryFilter)) {
+          state.adminProductCategoryFilter = 'Semua';
+        }
+        filterKatSelect.innerHTML = `<option value="Semua">Semua Kategori</option>` +
+          state.kategoriList.map(k => `<option value="${escapeHtmlAttr(k)}" ${String(state.adminProductCategoryFilter) === String(k) ? 'selected' : ''}>${escapeHtmlAttr(k)}</option>`).join('');
       }
 
       if (subParentSelect) {
@@ -2881,10 +2900,11 @@
       const container = document.getElementById('adminOrdersPanel');
       if (!container) return;
 
-      // Sembunyikan otomatis transaksi yang sudah berstatus "Selesai" dari daftar Pesanan Masuk
-      const activeOrders = (state.localOrders || []).filter(
-        o => String(o.status || '').trim().toLowerCase() !== 'selesai'
-      );
+      // Sembunyikan otomatis transaksi yang sudah berstatus "Selesai" atau "Dibatalkan" dari daftar Pesanan Masuk
+      const activeOrders = (state.localOrders || []).filter(o => {
+        const st = String(o.status || '').trim().toLowerCase();
+        return st !== 'selesai' && st !== 'dibatalkan';
+      });
 
       const filterDate = String(state.adminOrderDateFilter || '').trim();
       const filteredOrders = filterDate
@@ -2991,8 +3011,9 @@
           saveLocalState();
         }
         renderAdminOrders();
-        if (String(statusBaru).trim().toLowerCase() === 'selesai') {
-          showToast(`Pesanan ${orderId} Selesai & otomatis dihapus dari daftar Pesanan Masuk!`, 'success');
+        const lowerStatus = String(statusBaru).trim().toLowerCase();
+        if (lowerStatus === 'selesai' || lowerStatus === 'dibatalkan') {
+          showToast(`Pesanan ${orderId} (${statusBaru}) otomatis dihapus dari daftar Pesanan Masuk!`, 'success');
         } else {
           showToast(`Pesanan ${orderId} diperbarui ke ${statusBaru}!`, 'success');
         }
@@ -3019,15 +3040,20 @@
     function renderAdminProductList() {
       const container = document.getElementById('adminProductListContainer');
       const countEl = document.getElementById('adminProductCount');
-      if (countEl) countEl.textContent = state.produk.length;
+      const selectedCatFilter = state.adminProductCategoryFilter || 'Semua';
+      const filteredProduk = selectedCatFilter === 'Semua'
+        ? state.produk
+        : state.produk.filter(p => String(p.kategori) === String(selectedCatFilter));
+
+      if (countEl) countEl.textContent = filteredProduk.length;
       if (!container) return;
 
-      if (state.produk.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada produk di katalog.</p>`;
+      if (filteredProduk.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic">${selectedCatFilter === 'Semua' ? 'Belum ada produk di katalog.' : 'Tidak ada produk pada kategori "' + escapeHtmlAttr(selectedCatFilter) + '".'}</p>`;
         return;
       }
 
-      container.innerHTML = state.produk.map(p => {
+      container.innerHTML = filteredProduk.map(p => {
         const pid = String(p.id).trim();
         const isLocked = Boolean(p.isLocked || state.lockedProductIds.includes(pid));
         const isEditingThis = String(state.editingProductId) === pid;
@@ -3546,17 +3572,88 @@
       const container = document.getElementById('adminCategoryListContainer');
       if (!container) return;
 
-      container.innerHTML = state.kategoriList.map(k => `
-        <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
-          <div>
-            <span class="font-bold text-slate-800">${escapeHtmlAttr(k)}</span>
-            <span class="text-[11px] text-slate-400 ml-2">${(state.subKategoriMap[k] || []).join(', ') || 'Tanpa sub-kategori'}</span>
+      container.innerHTML = state.kategoriList.map(k => {
+        const isEditing = String(state.editingCategoryName) === String(k);
+        if (isEditing) {
+          return `
+            <div class="flex items-center justify-between gap-2 bg-orange-50/70 px-3 py-2 rounded-lg border border-Hibualamo">
+              <input
+                id="admEditCatInput"
+                type="text"
+                value="${escapeHtmlAttr(k)}"
+                class="flex-1 px-2.5 py-1 rounded border border-slate-300 bg-white text-xs font-bold text-slate-800"
+              >
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" data-admin-save-edit-cat="${escapeHtmlAttr(k)}" class="bg-Hibualamo text-white font-bold px-2.5 py-1 rounded text-[11px] cursor-pointer">
+                  Simpan
+                </button>
+                <button type="button" data-admin-cancel-edit-cat="1" class="bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded text-[11px] cursor-pointer">
+                  Batal
+                </button>
+              </div>
+            </div>
+          `;
+        }
+        return `
+          <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
+            <div>
+              <span class="font-bold text-slate-800">${escapeHtmlAttr(k)}</span>
+              <span class="text-[11px] text-slate-400 ml-2">${(state.subKategoriMap[k] || []).join(', ') || 'Tanpa sub-kategori'}</span>
+            </div>
+            <div class="flex items-center gap-2.5 shrink-0">
+              <button type="button" data-admin-edit-cat="${escapeHtmlAttr(k)}" class="text-Hibualamo hover:underline font-bold text-[11px] cursor-pointer">
+                Edit
+              </button>
+              <button type="button" data-admin-del-cat="${escapeHtmlAttr(k)}" class="text-red-600 hover:underline font-bold text-[11px] cursor-pointer">
+                Hapus
+              </button>
+            </div>
           </div>
-          <button type="button" data-admin-del-cat="${escapeHtmlAttr(k)}" class="text-red-600 hover:underline font-bold text-[11px] cursor-pointer">
-            Hapus
-          </button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+    }
+
+    async function adminSaveEditCategory(oldKat) {
+      const input = document.getElementById('admEditCatInput');
+      const newKat = input?.value.trim() || '';
+      if (!newKat) {
+        showToast('Nama kategori tidak boleh kosong!', 'error');
+        return;
+      }
+      if (newKat === oldKat) {
+        state.editingCategoryName = '';
+        renderAdminCategoryList();
+        return;
+      }
+
+      const pin = state.verifiedAdminPin || state.localAdminPin;
+      await callServer('adminEditCategory', pin, oldKat, newKat);
+
+      state.kategoriList = state.kategoriList.map(k => (k === oldKat ? newKat : k));
+      state.kategoriList = Array.from(new Set(state.kategoriList));
+
+      if (state.subKategoriMap[oldKat]) {
+        const existingNewSubs = state.subKategoriMap[newKat] || [];
+        state.subKategoriMap[newKat] = Array.from(new Set([...existingNewSubs, ...state.subKategoriMap[oldKat]]));
+        delete state.subKategoriMap[oldKat];
+      }
+
+      state.produk.forEach(p => {
+        if (String(p.kategori) === String(oldKat)) {
+          p.kategori = newKat;
+        }
+      });
+
+      if (state.selectedCategory === oldKat) state.selectedCategory = newKat;
+      if (state.adminProductCategoryFilter === oldKat) state.adminProductCategoryFilter = newKat;
+      state.editingCategoryName = '';
+
+      saveLocalState();
+      renderAllUI();
+      renderAdminCategoryList();
+      populateAdminSelects();
+      renderAdminProductList();
+      showToast(`Kategori "${oldKat}" berhasil diubah menjadi "${newKat}"!`, 'success');
     }
 
     async function adminAddCategory() {
@@ -3973,6 +4070,11 @@
         populateAdminSubCategoryOptions(e.target.value);
       });
 
+      document.getElementById('admFilterProdKategori')?.addEventListener('change', (e) => {
+        state.adminProductCategoryFilter = e.target.value || 'Semua';
+        renderAdminProductList();
+      });
+
       document.getElementById('admSubParentCat')?.addEventListener('change', (e) => {
         const subInput = document.getElementById('admSubCatInput');
         if (subInput) {
@@ -4191,6 +4293,26 @@
         const delSupBtn = e.target.closest('[data-admin-del-sup]');
         if (delSupBtn) {
           adminDeleteSupplier(delSupBtn.getAttribute('data-admin-del-sup'));
+          return;
+        }
+
+        const editCatBtn = e.target.closest('[data-admin-edit-cat]');
+        if (editCatBtn) {
+          state.editingCategoryName = editCatBtn.getAttribute('data-admin-edit-cat') || '';
+          renderAdminCategoryList();
+          return;
+        }
+
+        const saveEditCatBtn = e.target.closest('[data-admin-save-edit-cat]');
+        if (saveEditCatBtn) {
+          adminSaveEditCategory(saveEditCatBtn.getAttribute('data-admin-save-edit-cat'));
+          return;
+        }
+
+        const cancelEditCatBtn = e.target.closest('[data-admin-cancel-edit-cat]');
+        if (cancelEditCatBtn) {
+          state.editingCategoryName = '';
+          renderAdminCategoryList();
           return;
         }
 
