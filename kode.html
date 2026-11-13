@@ -356,6 +356,7 @@ function createOrder(payload) {
         priceMap[pid] = {
           rowIndex: idx + 2,
           nama: String(r[1] || '').trim(),
+          kategori: String(r[2] || '').trim(),
           hargaDiskon: Number(r[5]) || Number(r[4]) || 0,
           stok: Number(r[6]) || 0,
           terjual: Number(r[7]) || 0
@@ -371,6 +372,7 @@ function createOrder(payload) {
     const dbProd = priceMap[pid];
     const unitPrice = dbProd ? dbProd.hargaDiskon : (Number(it.harga) || 0);
     const itemName = dbProd ? dbProd.nama : String(it.nama || 'Produk');
+    const itemKat = dbProd ? dbProd.kategori : `${String(it.kategori || '')} ${String(it.subKategori || '')}`;
     verifiedSubtotal += unitPrice * qty;
 
     if (dbProd && sheetProduk) {
@@ -383,17 +385,34 @@ function createOrder(payload) {
     return {
       id: pid,
       nama: itemName,
+      kategori: itemKat,
       harga: unitPrice,
       varian: String(it.varian || 'Standar'),
       qty: qty
     };
   });
 
+  const allNoShipping = verifiedItems.length > 0 && verifiedItems.every(it => {
+    const cleanKat = String(it.kategori || '')
+      .toLowerCase()
+      .replace(/[:\-_&/]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return (
+      cleanKat.indexOf('top up') !== -1 ||
+      cleanKat.indexOf('topup') !== -1 ||
+      cleanKat.indexOf('isi ulang') !== -1 ||
+      cleanKat.indexOf('isiulang') !== -1
+    );
+  });
+
   const ringkasanItem = verifiedItems.map(it => `${it.qty}x ${it.nama} (${it.varian || 'Standar'})`).join(', ');
   const subtotal = verifiedSubtotal > 0 ? verifiedSubtotal : (Number(payload.subtotal) || 0);
-  const ongkir = Math.max(0, Number(payload.ongkir) || 0);
+  const biayaLayanan = Math.round(subtotal * 0.02);
+  const ongkir = allNoShipping ? 0 : Math.max(0, Number(payload.ongkir) || 0);
   const diskonVoucher = Math.max(0, Number(payload.diskonVoucher) || 0);
-  const totalBayar = Math.max(0, subtotal + ongkir - diskonVoucher);
+  const totalBayar = Math.max(0, subtotal + biayaLayanan + ongkir - diskonVoucher);
+  const kurirFinal = allNoShipping ? 'Tanpa Pengiriman (Top Up / Isi Ulang)' : String(payload.kurir || 'Kurir Toko');
 
   let metodeBayar = String(payload.metodeBayar || 'COD');
   if (subtotal >= 50000 && metodeBayar.toUpperCase().indexOf('COD') !== -1) {
@@ -413,7 +432,7 @@ function createOrder(payload) {
     ongkir,
     diskonVoucher,
     totalBayar,
-    String(payload.kurir || 'Kurir Toko'),
+    kurirFinal,
     metodeBayar,
     'Belum Bayar',
     '-'
@@ -438,6 +457,9 @@ function createOrder(payload) {
           `No. WhatsApp: ${payload.noWa}\n` +
           `Alamat: ${payload.alamat}\n` +
           `Item: ${ringkasanItem}\n` +
+          `Subtotal Produk: Rp${subtotal.toLocaleString('id-ID')}\n` +
+          `Biaya Layanan WEB (2%): Rp${biayaLayanan.toLocaleString('id-ID')}\n` +
+          `Ongkir: Rp${ongkir.toLocaleString('id-ID')} (${kurirFinal})\n` +
           `Total Tagihan: Rp${totalBayar.toLocaleString('id-ID')}\n` +
           `Metode Bayar: ${metodeBayar}\n`
       });
@@ -456,9 +478,10 @@ function createOrder(payload) {
       items: verifiedItems,
       ringkasanItem: ringkasanItem,
       subtotal: subtotal,
+      biayaLayanan: biayaLayanan,
       ongkir: ongkir,
       totalBayar: totalBayar,
-      kurir: payload.kurir,
+      kurir: kurirFinal,
       metodeBayar: metodeBayar,
       status: 'Belum Bayar',
       noResi: '-'
