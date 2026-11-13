@@ -821,6 +821,10 @@
               <span id="chkSubtotalText" class="font-bold">Rp0</span>
             </div>
             <div class="flex justify-between text-slate-600">
+              <span>Biaya Layanan WEB</span>
+              <span id="chkBiayaLayananText" class="font-bold">Rp0</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
               <span>Estimasi Ongkir</span>
               <span id="chkOngkirText" class="font-bold">Rp12.000</span>
             </div>
@@ -2257,10 +2261,14 @@
       const existingIdx = state.cart.findIndex(item => item.id === product.id && item.varian === variant);
       if (existingIdx !== -1) {
         state.cart[existingIdx].qty += qty;
+        state.cart[existingIdx].kategori = product.kategori || '';
+        state.cart[existingIdx].subKategori = product.subKategori || '';
       } else {
         state.cart.push({
           id: product.id,
           nama: product.nama,
+          kategori: product.kategori || '',
+          subKategori: product.subKategori || '',
           harga: Number(product.hargaDiskon) || 0,
           gambar: product.gambar,
           varian: variant || 'Standar',
@@ -2270,6 +2278,30 @@
       saveLocalState();
       updateCartBadges();
       showToast('Produk ditambahkan ke keranjang!', 'success');
+    }
+
+    function isNoShippingCategory(kat, subKat) {
+      const combined = `${String(kat || '')} ${String(subKat || '')}`
+        .toLowerCase()
+        .replace(/[-_&/]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return (
+        combined.includes('top up') ||
+        combined.includes('topup') ||
+        combined.includes('isi ulang') ||
+        combined.includes('isiulang')
+      );
+    }
+
+    function isCartNoShipping() {
+      if (!Array.isArray(state.cart) || state.cart.length === 0) return false;
+      return state.cart.every(it => {
+        const prod = state.produk.find(p => String(p.id) === String(it.id));
+        const kat = prod ? prod.kategori : (it.kategori || '');
+        const subKat = prod ? prod.subKategori : (it.subKategori || '');
+        return isNoShippingCategory(kat, subKat);
+      });
     }
 
     function updateCartBadges() {
@@ -2326,17 +2358,35 @@
 
     function updateCheckoutSummary() {
       const subtotal = state.cart.reduce((sum, it) => sum + (Number(it.harga) * Number(it.qty)), 0);
-      const kurirVal = document.getElementById('chkKurir')?.value || 'Regular (1 - 3 Hari)|12000';
+      const biayaLayanan = Math.round(subtotal * 0.02);
+      const noShipping = isCartNoShipping();
+      const kurirSelect = document.getElementById('chkKurir');
+      const kurirVal = kurirSelect?.value || 'Regular (1 - 3 Hari)|12000';
       const [kurirName, ongkirRaw] = kurirVal.split('|');
-      const ongkir = Number(ongkirRaw) || 0;
-      const total = subtotal + ongkir;
+      const ongkir = noShipping ? 0 : (Number(ongkirRaw) || 0);
+      const total = subtotal + biayaLayanan + ongkir;
+
+      if (kurirSelect) {
+        kurirSelect.disabled = noShipping;
+        if (noShipping) {
+          kurirSelect.classList.add('opacity-60', 'cursor-not-allowed');
+        } else {
+          kurirSelect.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+      }
 
       const subEl = document.getElementById('chkSubtotalText');
+      const layananEl = document.getElementById('chkBiayaLayananText');
       const ongEl = document.getElementById('chkOngkirText');
       const totEl = document.getElementById('chkTotalText');
 
       if (subEl) subEl.textContent = formatRupiah(subtotal);
-      if (ongEl) ongEl.textContent = ongkir === 0 ? 'Konfirmasi via WA' : formatRupiah(ongkir);
+      if (layananEl) layananEl.textContent = formatRupiah(biayaLayanan);
+      if (ongEl) {
+        ongEl.textContent = noShipping
+          ? 'Rp0 (Tanpa Pengiriman)'
+          : (ongkir === 0 ? 'Konfirmasi via WA' : formatRupiah(ongkir));
+      }
       if (totEl) totEl.textContent = formatRupiah(total);
 
       const metodeSelect = document.getElementById('chkMetodeBayar');
@@ -2389,7 +2439,7 @@
       const alamat = document.getElementById('chkAlamat')?.value.trim() || '';
       const catatan = document.getElementById('chkCatatan')?.value.trim() || '-';
       const kurirVal = document.getElementById('chkKurir')?.value || 'Regular (1 - 3 Hari)|12000';
-      const [kurir, ongkirRaw] = kurirVal.split('|');
+      const [kurirRawName, ongkirRaw] = kurirVal.split('|');
       const metodeBayar = document.getElementById('chkMetodeBayar')?.value || 'COD (Bayar di Tempat)';
 
       if (!namaPembeli || !noWa || !alamat) {
@@ -2404,8 +2454,11 @@
         return;
       }
 
-      const ongkir = Number(ongkirRaw) || 0;
-      const totalBayar = subtotal + ongkir;
+      const biayaLayanan = Math.round(subtotal * 0.02);
+      const noShipping = isCartNoShipping();
+      const kurir = noShipping ? 'Tanpa Pengiriman (Top Up / Isi Ulang)' : kurirRawName;
+      const ongkir = noShipping ? 0 : (Number(ongkirRaw) || 0);
+      const totalBayar = subtotal + biayaLayanan + ongkir;
 
       const payload = {
         namaPembeli,
@@ -2414,6 +2467,7 @@
         catatan,
         items: [...state.cart],
         subtotal,
+        biayaLayanan,
         ongkir,
         totalBayar,
         kurir,
