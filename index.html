@@ -933,20 +933,54 @@
 
   <!-- FLOATING LIVE CHAT BUTTON & BOX -->
   <div class="fixed bottom-4 right-4 z-40">
-    <div id="liveChatBox" class="hidden mb-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-      <div class="bg-Hibualamo text-white px-3.5 py-2.5 flex items-center justify-between">
+    <div id="liveChatBox" class="hidden mb-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-HibualamoDark to-Hibualamo text-white px-3.5 py-2.5 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <i class="fa-solid fa-headset"></i>
-          <span class="text-xs font-extrabold">CS Hibualamo Shop</span>
+          <div class="relative">
+            <i class="fa-solid fa-robot text-sm text-amber-300"></i>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 absolute -bottom-0.5 -right-0.5 ring-1 ring-white"></span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold leading-none">CS Hibualamo Shop</div>
+            <div class="text-[10px] text-blue-100 mt-0.5">Asisten Otomatis & AI Online</div>
+          </div>
         </div>
-        <button type="button" data-action="toggle-live-chat" class="text-white/80 hover:text-white cursor-pointer">
-          <i class="fa-solid fa-xmark"></i>
+        <div class="flex items-center gap-1.5">
+          <button
+            type="button"
+            data-action="open-wa-admin-direct"
+            title="Chat Langsung ke WhatsApp Admin"
+            class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 cursor-pointer transition shadow-xs"
+          >
+            <i class="fa-brands fa-whatsapp"></i> WA Admin
+          </button>
+          <button type="button" data-action="toggle-live-chat" class="text-white/80 hover:text-white cursor-pointer px-1">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="liveChatMessagesContainer" class="p-3 h-64 overflow-y-auto space-y-2.5 bg-slate-50 text-xs"></div>
+
+      <!-- TOMBOL TOPIK CEPAT (OPSI 1) -->
+      <div class="px-2.5 py-2 bg-slate-100/80 border-t border-slate-200 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <button type="button" data-quick-chat="Info ongkir & pengiriman" class="shrink-0 bg-white hover:bg-blue-50 text-slate-700 hover:text-Hibualamo border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition">
+          🚚 Info Ongkir
+        </button>
+        <button type="button" data-quick-chat="Cara bayar & syarat COD" class="shrink-0 bg-white hover:bg-blue-50 text-slate-700 hover:text-Hibualamo border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition">
+          💳 Cara Bayar / COD
+        </button>
+        <button type="button" data-quick-chat="Rekomendasi produk terlaris & stok" class="shrink-0 bg-white hover:bg-blue-50 text-slate-700 hover:text-Hibualamo border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition">
+          🛍️ Cek Produk
+        </button>
+        <button type="button" data-quick-chat="Bagaimana cara lacak pesanan?" class="shrink-0 bg-white hover:bg-blue-50 text-slate-700 hover:text-Hibualamo border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition">
+          📦 Lacak Pesanan
         </button>
       </div>
-      <div id="liveChatMessagesContainer" class="p-3 h-56 overflow-y-auto space-y-2 bg-slate-50 text-xs"></div>
+
       <div class="p-2 border-t border-slate-200 flex gap-1.5 bg-white">
-        <input id="liveChatInput" type="text" placeholder="Tulis pesan..." class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs">
-        <button type="button" data-action="send-live-chat" class="bg-Hibualamo text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer">
+        <input id="liveChatInput" type="text" placeholder="Tanya produk, ongkir, atau cara bayar..." class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:border-Hibualamo">
+        <button type="button" data-action="send-live-chat" class="bg-Hibualamo hover:bg-HibualamoDark text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition">
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </div>
@@ -1225,11 +1259,14 @@
         updatedAt: '-'
       },
       liveChatOpen: false,
+      liveChatTyping: false,
+      lastUserChatText: '',
       liveChatMessages: [
         {
           sender: 'bot',
-          text: 'Halo kak! Selamat datang di Hibualamo Shop 👋 Ada yang bisa kami bantu hari ini?',
-          time: 'Baru saja'
+          text: 'Halo kak! Selamat datang di Hibualamo Shop 👋\nSaya Asisten CS Otomatis. Silakan pilih tombol topik di bawah atau ketik pertanyaan seputar produk, stok, ongkir, maupun pembayaran.',
+          time: 'Baru saja',
+          showWaButton: false
         }
       ]
     };
@@ -3895,142 +3932,7 @@
         showToast('Tidak dapat mengakses kamera perangkat.', 'error');
       }
     }
-
-    function closeAdminCamera() {
-      if (activeCameraStream) {
-        activeCameraStream.getTracks().forEach(t => t.stop());
-        activeCameraStream = null;
-      }
-      closeModal('cameraModal');
-    }
-
-    async function captureAdminPhoto() {
-      const videoEl = document.getElementById('cameraVideoEl');
-      if (!videoEl) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = 800;
-      canvas.height = 800;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-      const base64Data = canvas.toDataURL('image/jpeg', 0.88);
-      const targetProdId = state.cameraTargetProductId;
-      closeAdminCamera();
-      await processUploadedImageBase64(base64Data, 'camera_' + Date.now() + '.jpg', targetProdId);
-    }
-
-    async function generateGeminiProductPhotoClient(base64DataUrl) {
-      const autoEnhance = state.pengaturanBayar?.geminiAutoEnhance !== false;
-      const apiKey = String(state.pengaturanBayar?.geminiApiKey || '').trim();
-      const defaultPrompt = 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.';
-      const activePrompt = String(state.pengaturanBayar?.geminiPrompt || defaultPrompt).trim();
-
-      if (!autoEnhance || !apiKey) {
-        return { enhanced: false, dataUrl: base64DataUrl };
-      }
-
-      const splitParts = String(base64DataUrl || '').split(',');
-      const rawBase64 = splitParts.length > 1 ? splitParts[1] : splitParts[0];
-      const mimeMatch = String(splitParts[0] || '').match(/data:(.*?);base64/);
-      const mimeType = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : 'image/jpeg';
-
-      const fullInstruction =
-        `Transform this product photo into: ${activePrompt} ` +
-        `Keep the main product authentic, intact, well-proportioned, and centered.`;
-
-      const models = ['gemini-2.5-flash-image', 'gemini-2.0-flash-exp-image-generation'];
-
-      for (const modelName of models) {
-        try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
-          const resp = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: fullInstruction },
-                  { inline_data: { mime_type: mimeType, data: rawBase64 } }
-                ]
-              }],
-              generationConfig: {
-                responseModalities: ['TEXT', 'IMAGE']
-              }
-            })
-          });
-
-          if (resp.ok) {
-            const json = await resp.json();
-            const candidates = json.candidates || [];
-            for (const cand of candidates) {
-              const parts = cand?.content?.parts || [];
-              for (const part of parts) {
-                const inline = part.inlineData || part.inline_data;
-                if (inline && inline.data) {
-                  const outMime = inline.mimeType || inline.mime_type || 'image/png';
-                  return {
-                    enhanced: true,
-                    dataUrl: `data:${outMime};base64,${inline.data}`,
-                    mimeType: outMime
-                  };
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.warn('Gemini client flow fallback:', err);
-        }
-      }
-
-      return { enhanced: false, dataUrl: base64DataUrl };
-    }
-
-    async function processUploadedImageBase64(base64Data, fileName, targetProdId = '') {
-      const cleanTarget = String(targetProdId || '').trim();
-      const inputEl = cleanTarget
-        ? document.getElementById(`inlineProdGambar_${cleanTarget}`)
-        : document.getElementById('admProdGambar');
-      const previewWrap = cleanTarget
-        ? document.getElementById(`inlineImagePreviewWrap_${cleanTarget}`)
-        : document.getElementById('admImagePreviewWrap');
-      const previewImg = cleanTarget
-        ? document.getElementById(`inlineImagePreview_${cleanTarget}`)
-        : document.getElementById('admImagePreview');
-
-      let workingBase64 = base64Data;
-      let workingMime = 'image/jpeg';
-      let clientEnhanced = false;
-
-      if (inputEl) inputEl.value = workingBase64;
-      if (previewImg) previewImg.src = workingBase64;
-      if (previewWrap) previewWrap.classList.remove('hidden');
-
-      const autoEnhance = state.pengaturanBayar?.geminiAutoEnhance !== false;
-      if (autoEnhance) {
-        showToast('Memproses foto dengan Gemini AI Studio Flow...', 'info');
-        const aiResult = await generateGeminiProductPhotoClient(workingBase64);
-        if (aiResult && aiResult.enhanced && aiResult.dataUrl) {
-          workingBase64 = aiResult.dataUrl;
-          workingMime = aiResult.mimeType || 'image/png';
-          clientEnhanced = true;
-          if (inputEl) inputEl.value = workingBase64;
-          if (previewImg) previewImg.src = workingBase64;
-        }
-      }
-
-      const pin = state.verifiedAdminPin || state.localAdminPin;
-      const res = await callServer('adminUploadImageToDrive', pin, workingBase64, fileName, workingMime, clientEnhanced);
-      if (res && res.success && res.url) {
-        if (inputEl) inputEl.value = res.url;
-        if (previewImg) previewImg.src = convertDriveUrl(res.url);
-        if (clientEnhanced || res.aiEnhanced) {
-          showToast('Foto produk berhasil digenerate Gemini AI Studio Flow!', 'success');
-        } else {
-          showToast('Foto produk siap digunakan! (Isi Gemini API Key di Pengaturan untuk fitur AI Studio)', 'info');
-        }
-      }
-    }
-
-    // LIVE CHAT WIDGET
+    // LIVE CHAT WIDGET (OPSI 1: KEYWORD BOT & TOMBOL CEPAT + OPSI 2: GEMINI AI)
     function formatWaNumber(rawWa) {
       let digits = String(rawWa || '08215075520').replace(/\D/g, '');
       if (digits.startsWith('0')) {
@@ -4041,42 +3943,177 @@
       return digits;
     }
 
+    function openWaAdminWithText(customText) {
+      const rawAdminWa = state.pengaturanBayar?.noWaAdmin || '08215075520';
+      const formattedWa = formatWaNumber(rawAdminWa);
+      const messageToSend = customText
+        ? `Halo CS Hibualamo Shop, ${customText}`
+        : (state.lastUserChatText
+            ? `Halo CS Hibualamo Shop, saya ingin menanyakan: ${state.lastUserChatText}`
+            : 'Halo CS Hibualamo Shop, saya butuh bantuan terkait pesanan/produk.');
+      const waUrl = `https://wa.me/${formattedWa}?text=${encodeURIComponent(messageToSend)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+
     function renderLiveChat() {
       const container = document.getElementById('liveChatMessagesContainer');
       if (!container) return;
-      container.innerHTML = state.liveChatMessages.map(m => `
+
+      const messagesHtml = state.liveChatMessages.map(m => `
         <div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}">
-          <div class="${m.sender === 'user' ? 'bg-Hibualamo text-white' : 'bg-white border border-slate-200 text-slate-700'} px-3 py-2 rounded-xl max-w-[85%]">
-            <p>${escapeHtmlAttr(m.text)}</p>
+          <div class="${m.sender === 'user' ? 'bg-Hibualamo text-white' : 'bg-white border border-slate-200 text-slate-700 shadow-2xs'} px-3 py-2 rounded-xl max-w-[88%] space-y-1.5">
+            <p class="whitespace-pre-line leading-relaxed">${escapeHtmlAttr(m.text)}</p>
+            ${m.showWaButton ? `
+              <div class="pt-1">
+                <button
+                  type="button"
+                  data-action="open-wa-admin-direct"
+                  class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-2.5 py-1.5 rounded-lg text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition"
+                >
+                  <i class="fa-brands fa-whatsapp text-sm"></i> Lanjut Chat ke WhatsApp Admin
+                </button>
+              </div>
+            ` : ''}
           </div>
         </div>
       `).join('');
+
+      const typingHtml = state.liveChatTyping ? `
+        <div class="flex justify-start">
+          <div class="bg-white border border-slate-200 text-slate-500 px-3 py-2 rounded-xl text-[11px] italic flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-notch fa-spin text-Hibualamo"></i> CS sedang mengetik balasan...
+          </div>
+        </div>
+      ` : '';
+
+      container.innerHTML = messagesHtml + typingHtml;
       container.scrollTop = container.scrollHeight;
     }
 
-    function sendLiveChatMessage() {
+    function generateLocalSmartReply(userText) {
+      const low = String(userText || '').toLowerCase().trim();
+      const visibleProducts = state.produk.filter(p => isProductVisibleOnWeb(p));
+      const noRek = state.pengaturanBayar?.noRekening || 'Bank Mandiri - 1860000119434';
+      const namaRek = state.pengaturanBayar?.namaPemilikRekening || 'Andri Illa';
+      const noWa = state.pengaturanBayar?.noWaAdmin || '08215075520';
+
+      // 1. Jika menanyakan ongkir / pengiriman / kurir
+      if (low.includes('ongkir') || low.includes('kirim') || low.includes('pengiriman') || low.includes('kurir')) {
+        return (
+          `🚚 Info Opsi Pengiriman Hibualamo Shop:\n` +
+          `• Regular (1 - 3 Hari): Rp12.000\n` +
+          `• Pengiriman Instan (1 - 2 Hari): Rp18.000\n` +
+          `• Pengiriman Luar Kota & Armada Pick Up: Konfirmasi via WA\n` +
+          `• Khusus kategori Top Up & Isi Ulang: GRATIS ONGKIR (Rp0)\n\n` +
+          `*Biaya Layanan WEB: 2% dari subtotal produk.`
+        );
+      }
+
+      // 2. Jika menanyakan cara bayar / COD / transfer / QRIS / biaya layanan
+      if (low.includes('bayar') || low.includes('cod') || low.includes('rekening') || low.includes('qris') || low.includes('transfer') || low.includes('biaya layanan')) {
+        return (
+          `💳 Info Pembayaran Hibualamo Shop:\n` +
+          `1. COD (Bayar di Tempat): Tersedia untuk belanja produk di bawah Rp50.000.\n` +
+          `2. Transfer Bank: ${noRek} a.n ${namaRek}.\n` +
+          `3. QRIS: Tersedia otomatis saat Checkout.\n\n` +
+          `Catatan: Terdapat Biaya Layanan WEB sebesar 2% dari subtotal produk.`
+        );
+      }
+
+      // 3. Jika menanyakan lacak pesanan / resi / status order
+      if (low.includes('lacak') || low.includes('resi') || low.includes('status') || low.includes('ord-')) {
+        return (
+          `📦 Cara Melacak Pesanan:\n` +
+          `Kakak bisa klik tombol "Lacak Pesanan" di bagian atas website, lalu masukkan ID Pesanan (contoh: ORD-1234) atau Nomor WhatsApp yang digunakan saat checkout.`
+        );
+      }
+
+      // 4. Cek apakah kata kunci cocok dengan produk di katalog
+      const words = low.split(/\s+/).filter(w => w.length >= 3 && !['berapa', 'harga', 'stok', 'apakah', 'ada', 'produk', 'yang', 'untuk', 'cek', 'info', 'rekomendasi', 'terlaris'].includes(w));
+      if (words.length > 0) {
+        const matched = visibleProducts.filter(p => {
+          const pName = String(p.nama || '').toLowerCase();
+          const pKat = String(p.kategori || '').toLowerCase();
+          return words.some(w => pName.includes(w) || pKat.includes(w));
+        });
+
+        if (matched.length > 0) {
+          const topList = matched.slice(0, 3).map(p =>
+            `• ${p.nama}\n  Harga: ${formatRupiah(p.hargaDiskon)} | Stok: ${p.stok}`
+          ).join('\n');
+          return `🛍️ Berikut produk yang cocok di katalog kami:\n${topList}\n\nSilakan klik produk di katalog untuk langsung masuk ke Keranjang ya kak!`;
+        }
+      }
+
+      // 5. Jika menanyakan rekomendasi / produk / stok secara umum
+      if (low.includes('produk') || low.includes('stok') || low.includes('harga') || low.includes('rekomendasi') || low.includes('terlaris') || low.includes('jual')) {
+        const best = [...visibleProducts]
+          .sort((a, b) => (Number(b.terjual) || 0) - (Number(a.terjual) || 0))
+          .slice(0, 3);
+        if (best.length > 0) {
+          const listStr = best.map(p => `• ${p.nama} (${formatRupiah(p.hargaDiskon)} - Stok: ${p.stok})`).join('\n');
+          return `🔥 Produk Terlaris di Hibualamo Shop saat ini:\n${listStr}\n\nKakak juga bisa ketik nama barang yang dicari di kolom chat ini!`;
+        }
+      }
+
+      // 6. Jika meminta bicara langsung dengan admin / WA
+      if (low.includes('admin') || low.includes('wa') || low.includes('whatsapp') || low.includes('cs')) {
+        return `📲 Untuk terhubung langsung dengan Admin kami di WhatsApp (${noWa}), silakan klik tombol "Lanjut Chat ke WhatsApp Admin" di bawah pesan ini ya kak!`;
+      }
+
+      // Default balasan ramah
+      return (
+        `Terima kasih sudah menghubungi CS Hibualamo Shop 😊\n` +
+        `Kakak bisa tanya seputar:\n` +
+        `• Nama produk / harga / stok\n` +
+        `• Ongkir (Regular Rp12.000, Instan Rp18.000, Top Up & Isi Ulang Gratis Ongkir)\n` +
+        `• Pembayaran (COD, Transfer, QRIS)\n\n` +
+        `Atau klik tombol di bawah jika ingin langsung terhubung ke WhatsApp Admin kami.`
+      );
+    }
+
+    async function getAiOrKeywordReply(userText) {
+      // Coba panggil Gemini AI melalui Backend Google Apps Script terlebih dahulu (Opsi 2)
+      try {
+        if (isRemoteServerConnected()) {
+          const res = await callServer('chatWithCsAi', userText);
+          if (res && res.success && res.reply) {
+            return String(res.reply).trim();
+          }
+        }
+      } catch (e) {}
+
+      // Fallback ke Chatbot Kata Kunci & Katalog Pintar (Opsi 1)
+      return generateLocalSmartReply(userText);
+    }
+
+    async function sendLiveChatMessage(prefilledText = '') {
       const input = document.getElementById('liveChatInput');
-      const text = input?.value.trim() || '';
+      const text = String(prefilledText || input?.value || '').trim();
       if (!text) return;
-      state.liveChatMessages.push({ sender: 'user', text, time: 'Baru saja' });
-      input.value = '';
+
+      state.lastUserChatText = text;
+      state.liveChatMessages.push({
+        sender: 'user',
+        text: text,
+        time: 'Baru saja',
+        showWaButton: false
+      });
+      if (input && !prefilledText) input.value = '';
+
+      state.liveChatTyping = true;
       renderLiveChat();
 
-      const rawAdminWa = state.pengaturanBayar?.noWaAdmin || '08215075520';
-      const formattedWa = formatWaNumber(rawAdminWa);
-      const waText = `Halo CS Hibualamo Shop, ${text}`;
-      const waUrl = `https://wa.me/${formattedWa}?text=${encodeURIComponent(waText)}`;
+      const replyText = await getAiOrKeywordReply(text);
 
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-
-      setTimeout(() => {
-        state.liveChatMessages.push({
-          sender: 'bot',
-          text: 'Pesan Anda telah diteruskan langsung ke WhatsApp Admin kami (' + rawAdminWa + ').',
-          time: 'Baru saja'
-        });
-        renderLiveChat();
-      }, 400);
+      state.liveChatTyping = false;
+      state.liveChatMessages.push({
+        sender: 'bot',
+        text: replyText,
+        time: 'Baru saja',
+        showWaButton: true
+      });
+      renderLiveChat();
     }
 
     function enableHorizontalDragScroll(el) {
@@ -4280,6 +4317,13 @@
       });
 
       document.body.addEventListener('click', async (e) => {
+        const quickChatBtn = e.target.closest('[data-quick-chat]');
+        if (quickChatBtn) {
+          const qText = quickChatBtn.getAttribute('data-quick-chat') || '';
+          if (qText) sendLiveChatMessage(qText);
+          return;
+        }
+
         const bannerDotBtn = e.target.closest('[data-banner-dot]');
         if (bannerDotBtn) {
           goToBannerSlide(Number(bannerDotBtn.getAttribute('data-banner-dot')));
@@ -4651,6 +4695,9 @@
             break;
           case 'send-live-chat':
             sendLiveChatMessage();
+            break;
+          case 'open-wa-admin-direct':
+            openWaAdminWithText();
             break;
         }
       });
