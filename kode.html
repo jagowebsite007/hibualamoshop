@@ -85,6 +85,8 @@ function getActionHandlers() {
     adminDeleteReview: adminDeleteReview,
     adminSaveSupplier: adminSaveSupplier,
     adminDeleteSupplier: adminDeleteSupplier,
+    adminSaveCustomer: adminSaveCustomer,
+    adminDeleteCustomer: adminDeleteCustomer,
     adminAddCategory: adminAddCategory,
     adminEditCategory: adminEditCategory,
     adminDeleteCategory: adminDeleteCategory,
@@ -286,6 +288,77 @@ function getStoreDataInternal(isAdmin) {
     }
   }
 
+  // 3B. Baca Database Pelanggan (Hanya dikirim ke Panel Admin)
+  const pelanggan = [];
+  if (isAdmin) {
+    let sheetPelanggan = ss.getSheetByName('Pelanggan');
+    if (!sheetPelanggan) {
+      sheetPelanggan = ss.insertSheet('Pelanggan');
+      sheetPelanggan.appendRow([
+        'ID_Pelanggan', 'Nama_Pelanggan', 'No_WA', 'Alamat',
+        'Total_Pesanan', 'Total_Belanja', 'Terakhir_Order'
+      ]);
+    }
+
+    const seenWa = {};
+    if (sheetPelanggan.getLastRow() >= 2) {
+      const rows = sheetPelanggan.getRange(2, 1, sheetPelanggan.getLastRow() - 1, 7).getValues();
+      rows.forEach(r => {
+        const idPel = String(r[0] || '').trim();
+        const noWa = String(r[2] || '').trim();
+        if (!idPel && !noWa) return;
+        const normWa = normalizeWaKey(noWa);
+        if (normWa) seenWa[normWa] = true;
+        pelanggan.push({
+          idPelanggan: idPel || ('CUST-' + Math.floor(1000 + Math.random() * 9000)),
+          nama: String(r[1] || 'Pelanggan'),
+          noWa: noWa,
+          alamat: String(r[3] || '-'),
+          totalPesanan: Number(r[4]) || 1,
+          totalBelanja: Number(r[5]) || 0,
+          terakhirOrder: String(r[6] || '-')
+        });
+      });
+    }
+
+    // Sinkronkan juga dari histori Sheet Pesanan jika ada pembeli lama yang belum tercatat di Sheet Pelanggan
+    const sheetPesanan = ss.getSheetByName('Pesanan');
+    if (sheetPesanan && sheetPesanan.getLastRow() >= 2) {
+      const ordRows = sheetPesanan.getRange(2, 1, sheetPesanan.getLastRow() - 1, 12).getValues();
+      ordRows.forEach(r => {
+        const namaOrd = String(r[2] || '').trim();
+        const waOrd = String(r[3] || '').trim();
+        const alamatOrd = String(r[4] || '').trim();
+        const tanggalOrd = String(r[1] || '').trim();
+        const totalOrd = Number(r[11]) || 0;
+        const normWa = normalizeWaKey(waOrd);
+        if (normWa && !seenWa[normWa]) {
+          seenWa[normWa] = true;
+          const newId = 'CUST-' + Math.floor(1000 + Math.random() * 9000);
+          const newCust = {
+            idPelanggan: newId,
+            nama: namaOrd || 'Pelanggan',
+            noWa: waOrd,
+            alamat: alamatOrd || '-',
+            totalPesanan: 1,
+            totalBelanja: totalOrd,
+            terakhirOrder: tanggalOrd || '-'
+          };
+          pelanggan.push(newCust);
+          sheetPelanggan.appendRow([
+            newCust.idPelanggan,
+            newCust.nama,
+            newCust.noWa,
+            newCust.alamat,
+            newCust.totalPesanan,
+            newCust.totalBelanja,
+            newCust.terakhirOrder
+          ]);
+        }
+      });
+    }
+  }
+
   // 4. Kategori & Pengaturan Pembayaran (API Key & Email disembunyikan dari publik)
   const rawKategori = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga');
   const kategoriList = rawKategori.split(',').map(k => k.trim()).filter(Boolean);
@@ -307,12 +380,77 @@ function getStoreDataInternal(isAdmin) {
     produk: produk,
     ulasan: ulasan,
     supplier: supplier,
+    pelanggan: pelanggan,
     kategoriList: kategoriList,
     subKategoriMap: subKategoriMap,
     pengaturanBayar: pengaturanBayar,
     lockedProductIds: lockedProductIds,
     hideDummyProducts: hideDummyProducts
   };
+}
+
+function normalizeWaKey(rawWa) {
+  let digits = String(rawWa || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.indexOf('0') === 0) {
+    digits = '62' + digits.substring(1);
+  } else if (digits.indexOf('62') !== 0) {
+    digits = '62' + digits;
+  }
+  return digits;
+}
+
+function upsertCustomerFromOrder(namaPembeli, noWa, alamat, totalBayar, tanggal) {
+  try {
+    const cleanNama = String(namaPembeli || '').trim();
+    const cleanWa = String(noWa || '').trim();
+    const cleanAlamat = String(alamat || '').trim();
+    const normWa = normalizeWaKey(cleanWa);
+    if (!normWa) return;
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheetPelanggan = ss.getSheetByName('Pelanggan');
+    if (!sheetPelanggan) {
+      sheetPelanggan = ss.insertSheet('Pelanggan');
+      sheetPelanggan.appendRow([
+        'ID_Pelanggan', 'Nama_Pelanggan', 'No_WA', 'Alamat',
+        'Total_Pesanan', 'Total_Belanja', 'Terakhir_Order'
+      ]);
+    }
+
+    const lastRow = sheetPelanggan.getLastRow();
+    if (lastRow >= 2) {
+      const rows = sheetPelanggan.getRange(2, 1, lastRow - 1, 7).getValues();
+      for (let i = 0; i < rows.length; i++) {
+        const existingNormWa = normalizeWaKey(rows[i][2]);
+        if (existingNormWa && existingNormWa === normWa) {
+          const rowIdx = i + 2;
+          const prevOrders = Number(rows[i][4]) || 0;
+          const prevSpent = Number(rows[i][5]) || 0;
+          sheetPelanggan.getRange(rowIdx, 2, 1, 6).setValues([[
+            cleanNama || String(rows[i][1] || 'Pelanggan'),
+            cleanWa || String(rows[i][2] || ''),
+            cleanAlamat || String(rows[i][3] || '-'),
+            prevOrders + 1,
+            prevSpent + (Number(totalBayar) || 0),
+            tanggal
+          ]]);
+          return;
+        }
+      }
+    }
+
+    const custId = 'CUST-' + Math.floor(1000 + Math.random() * 9000);
+    sheetPelanggan.appendRow([
+      custId,
+      cleanNama || 'Pelanggan',
+      cleanWa,
+      cleanAlamat || '-',
+      1,
+      Number(totalBayar) || 0,
+      tanggal
+    ]);
+  } catch (e) {}
 }
 
 /**
@@ -440,6 +578,9 @@ function createOrder(payload) {
   ];
 
   sheetPesanan.appendRow(rowData);
+
+  // Simpan / perbarui otomatis ke Sheet Pelanggan (Auto-Database Pelanggan)
+  upsertCustomerFromOrder(payload.namaPembeli, payload.noWa, payload.alamat, totalBayar, tanggal);
 
   // Kirim notifikasi email ke pemilik jika diatur
   try {
@@ -713,6 +854,7 @@ function adminGetOrders(pin) {
     produk: initData.produk,
     ulasan: initData.ulasan,
     supplier: initData.supplier,
+    pelanggan: initData.pelanggan,
     kategoriList: initData.kategoriList,
     subKategoriMap: initData.subKategoriMap,
     pengaturanBayar: initData.pengaturanBayar,
@@ -1099,6 +1241,88 @@ function adminDeleteSupplier(pin, supId) {
     }
   }
   return { success: true, message: 'Supplier berhasil dihapus!' };
+}
+
+function adminSaveCustomer(pin, cust) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetPelanggan = ss.getSheetByName('Pelanggan');
+  if (!sheetPelanggan) {
+    sheetPelanggan = ss.insertSheet('Pelanggan');
+    sheetPelanggan.appendRow([
+      'ID_Pelanggan', 'Nama_Pelanggan', 'No_WA', 'Alamat',
+      'Total_Pesanan', 'Total_Belanja', 'Terakhir_Order'
+    ]);
+  }
+
+  const tanggal = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'dd/MM/yyyy HH:mm');
+  const idPel = String(cust.idPelanggan || '').trim() || ('CUST-' + Math.floor(1000 + Math.random() * 9000));
+  const nama = String(cust.nama || '').trim() || 'Pelanggan';
+  const noWa = String(cust.noWa || '').trim();
+  const alamat = String(cust.alamat || '-').trim();
+  const normWa = normalizeWaKey(noWa);
+
+  if (sheetPelanggan.getLastRow() >= 2 && normWa) {
+    const rows = sheetPelanggan.getRange(2, 1, sheetPelanggan.getLastRow() - 1, 7).getValues();
+    for (let i = 0; i < rows.length; i++) {
+      if (normalizeWaKey(rows[i][2]) === normWa || String(rows[i][0]).trim() === idPel) {
+        const rowIdx = i + 2;
+        sheetPelanggan.getRange(rowIdx, 2, 1, 3).setValues([[nama, noWa, alamat]]);
+        return {
+          success: true,
+          customer: {
+            idPelanggan: String(rows[i][0]),
+            nama: nama,
+            noWa: noWa,
+            alamat: alamat,
+            totalPesanan: Number(rows[i][4]) || 1,
+            totalBelanja: Number(rows[i][5]) || 0,
+            terakhirOrder: String(rows[i][6] || tanggal)
+          },
+          message: 'Data pelanggan berhasil diperbarui!'
+        };
+      }
+    }
+  }
+
+  const newCust = {
+    idPelanggan: idPel,
+    nama: nama,
+    noWa: noWa,
+    alamat: alamat,
+    totalPesanan: Number(cust.totalPesanan) || 1,
+    totalBelanja: Number(cust.totalBelanja) || 0,
+    terakhirOrder: tanggal
+  };
+
+  sheetPelanggan.appendRow([
+    newCust.idPelanggan,
+    newCust.nama,
+    newCust.noWa,
+    newCust.alamat,
+    newCust.totalPesanan,
+    newCust.totalBelanja,
+    newCust.terakhirOrder
+  ]);
+
+  return { success: true, customer: newCust, message: 'Pelanggan berhasil disimpan!' };
+}
+
+function adminDeleteCustomer(pin, idPelanggan) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetPelanggan = ss.getSheetByName('Pelanggan');
+  if (sheetPelanggan && sheetPelanggan.getLastRow() >= 2) {
+    const ids = sheetPelanggan.getRange(2, 1, sheetPelanggan.getLastRow() - 1, 1).getValues();
+    for (let i = ids.length - 1; i >= 0; i--) {
+      if (String(ids[i][0]).trim() === String(idPelanggan).trim()) {
+        sheetPelanggan.deleteRow(i + 2);
+      }
+    }
+  }
+  return { success: true, message: 'Data pelanggan berhasil dihapus!' };
 }
 
 function adminAddCategory(pin, namaKat) {
