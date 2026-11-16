@@ -296,6 +296,23 @@ function setupDatabase() {
     });
   }
 
+  // 7. SETUP SHEET PELANGGAN (DATABASE PELANGGAN OTOMATIS & ANTI-RESET)
+  let sheetPelanggan = ss.getSheetByName('Pelanggan');
+  const headerPelanggan = [
+    'ID_Pelanggan', 'Nama_Pelanggan', 'No_WA', 'Alamat',
+    'Total_Pesanan', 'Total_Belanja', 'Terakhir_Order'
+  ];
+
+  if (!sheetPelanggan) {
+    sheetPelanggan = ss.insertSheet('Pelanggan');
+  }
+
+  if (sheetPelanggan.getLastRow() === 0) {
+    sheetPelanggan.appendRow(headerPelanggan);
+    styleHeader(sheetPelanggan, headerPelanggan.length);
+    sheetPelanggan.autoResizeColumns(1, headerPelanggan.length);
+  }
+
   return 'Setup Database Selesai (Data Eksisting Terlindungi 100%)';
 }
 
