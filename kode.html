@@ -93,9 +93,609 @@ function getActionHandlers() {
     adminSaveSubCategories: adminSaveSubCategories,
     adminSetHideDummy: adminSetHideDummy,
     adminSavePaymentSettings: adminSavePaymentSettings,
+    adminSyncDataSupplier: adminSyncDataSupplier,
     adminChangePassword: adminChangePassword,
     pingVisitor: pingVisitor,
     adminGetVisitorStats: adminGetVisitorStats
+  };
+}
+
+const DEFAULT_DATASUPPLIER_GAS_URL = 'https://script.google.com/macros/s/AKfycbyUAAcXaKIDLtGUZeHX1qwZfmdEBmRLUocdgZn13tu1tFBUVLYCVzyjDFcW2qD4ZMYz/exec';
+
+/**
+ * DETEKSI OTOMATIS KATEGORI & SUB-KATEGORI PRODUK DARI DATASUPPLIER
+ * Menggunakan pencocokan kata kunci pintar + fallback Gemini AI
+ */
+function autoCategorizeSupplierProduct(namaProduk, deskripsiProduk, rawKategoriInput, existingKategoriList, subKategoriMap, geminiApiKey) {
+  const text = `${String(namaProduk || '')} ${String(deskripsiProduk || '')} ${String(rawKategoriInput || '')}`.toLowerCase();
+
+  // 1. Jika dari DataSupplier sudah punya format Kategori::SubKategori yang valid (bukan Lainnya/Umum)
+  const rawKatClean = String(rawKategoriInput || '').trim();
+  if (rawKatClean.indexOf('::') !== -1) {
+    const parts = rawKatClean.split('::');
+    const mKat = String(parts[0] || '').trim();
+    const sKat = String(parts[1] || '').trim();
+    if (mKat && mKat.toLowerCase() !== 'lainnya' && mKat.toLowerCase() !== 'umum' && sKat) {
+      return { kategori: mKat, subKategori: sKat };
+    }
+  }
+
+  // 2. Kamus Aturan Kata Kunci Pintar (Kategori Utama & Sub-Kategori)
+  const rules = [
+    {
+      kategori: 'Top Up',
+      subKategori: 'Pulsa & Paket Data',
+      keywords: ['pulsa', 'paket data', 'kuota', 'voucher kuota', 'axis', 'telkomsel', 'indosat', 'xl', 'tri ', 'smartfren', 'by.u']
+    },
+    {
+      kategori: 'Top Up',
+      subKategori: 'Token Listrik & Tagihan',
+      keywords: ['token', 'listrik', 'pln', 'prabayar', 'pascabayar', 'pdam', 'bpjs']
+    },
+    {
+      kategori: 'Top Up',
+      subKategori: 'Voucher Game & E-Wallet',
+      keywords: ['top up', 'topup', 'diamond', 'mobile legends', 'free fire', 'ff ', 'pubg', 'genshin', 'roblox', 'steam', 'valorant', 'dana', 'ovo', 'gopay', 'shopeepay', 'linkaja', 'maxim', 'saldo']
+    },
+    {
+      kategori: 'Isi Ulang',
+      subKategori: 'Air Galon & Gas',
+      keywords: ['isi ulang', 'isiulang', 'galon', 'air minum isi ulang', 'gas lpg', 'elpiji']
+    },
+    {
+      kategori: 'Elektronik',
+      subKategori: 'Audio',
+      keywords: ['tws', 'earbuds', 'earphone', 'headset', 'headphone', 'speaker', 'bluetooth speaker', 'microphone', 'mikrofon', 'soundcard', 'audio']
+    },
+    {
+      kategori: 'Elektronik',
+      subKategori: 'Gadget',
+      keywords: ['smartwatch', 'smartphone', 'handphone', 'hp ', 'iphone', 'android', 'tablet', 'ipad', 'powerbank', 'power bank', 'charger', 'casan', 'kabel data', 'type-c', 'lightning', 'holder hp', 'tripod', 'ringlight', 'kamera', 'cctv', 'flashdisk', 'memory card', 'micro sd']
+    },
+    {
+      kategori: 'Elektronik',
+      subKategori: 'Komputer & Laptop',
+      keywords: ['laptop', 'komputer', 'pc ', 'monitor', 'keyboard', 'mouse', 'mousepad', 'printer', 'tinta printer', 'modem', 'router', 'wifi', 'harddisk', 'ssd', 'ram ']
+    },
+    {
+      kategori: 'Fashion',
+      subKategori: 'Pakaian Pria',
+      keywords: ['kemeja pria', 'flanel', 'kaos pria', 't-shirt', 'distro', 'polo shirt', 'celana pria', 'chino', 'jeans pria', 'jaket pria', 'hoodie', 'sweater', 'batik pria', 'koko']
+    },
+    {
+      kategori: 'Fashion',
+      subKategori: 'Pakaian Wanita',
+      keywords: ['gamis', 'dress', 'blouse', 'tunik', 'kemeja wanita', 'kaos wanita', 'cardigan', 'rok ', 'kulot', 'celana wanita', 'daster', 'piyama', 'kebaya', 'hijab', 'jilbab', 'kerudung', 'pashmina', 'mukena']
+    },
+    {
+      kategori: 'Fashion',
+      subKategori: 'Sepatu',
+      keywords: ['sepatu', 'sneakers', 'running shoes', 'sandal', 'sendal', 'flatshoes', 'heels', 'wedges', 'loafers', 'boots', 'kaos kaki']
+    },
+    {
+      kategori: 'Makanan',
+      subKategori: 'Cemilan',
+      keywords: ['keripik', 'kripik', 'snack', 'cemilan', 'camilan', 'kue', 'biskuit', 'cookies', 'coklat', 'cokelat', 'roti', 'kacang', 'makaroni', 'basreng', 'seblak', 'kerupuk', 'pisang', 'abon', 'dendeng', 'frozen food', 'sosis', 'nugget', 'dimsum']
+    },
+    {
+      kategori: 'Makanan',
+      subKategori: 'Minuman',
+      keywords: ['kopi', 'arabika', 'robusta', 'teh ', 'matcha', 'susu', 'minuman', 'sirup', 'jus', 'madu', 'herbal', 'jahe', 'bubuk minuman', 'air mineral']
+    },
+    {
+      kategori: 'Makanan',
+      subKategori: 'Bahan Pokok',
+      keywords: ['beras', 'minyak goreng', 'gula', 'tepung', 'telur', 'mie ', 'indomie', 'bumbu', 'sambal', 'saus', 'kecap', 'garam', 'mentega', 'margarin', 'sembako']
+    },
+    {
+      kategori: 'Aksesoris',
+      subKategori: 'Tas',
+      keywords: ['tas ', 'ransel', 'backpack', 'slingbag', 'sling bag', 'totebag', 'tote bag', 'waistbag', 'tas selempang', 'tas laptop', 'dompet', 'koper', 'pouch']
+    },
+    {
+      kategori: 'Aksesoris',
+      subKategori: 'Jam & Kacamata',
+      keywords: ['jam tangan', 'arloji', 'kacamata', 'topi', 'ikat pinggang', 'sabuk', 'gesper', 'gelang', 'kalung', 'cincin', 'anting', 'bros', 'payung', 'jas hujan', 'helm', 'sarung tangan']
+    },
+    {
+      kategori: 'Rumah Tangga',
+      subKategori: 'Penerangan',
+      keywords: ['lampu', 'bohlam', 'led ', 'senter', 'emergency lamp', 'lampu tidur', 'lampu meja', 'lampu hias']
+    },
+    {
+      kategori: 'Rumah Tangga',
+      subKategori: 'Dapur & Peralatan Rumah',
+      keywords: ['panci', 'wajan', 'teflon', 'pisau', 'talenan', 'piring', 'gelas', 'mangkok', 'sendok', 'garpu', 'tumbler', 'botol minum', 'termos', 'kotak makan', 'lunch box', 'blender', 'mixer', 'rice cooker', 'magic com', 'kompor', 'dispenser', 'kipas angin', 'setrika', 'sapu', 'pel ', 'rak ', 'handuk', 'sprei', 'bantal', 'selimut', 'karpet', 'keset', 'deterjen', 'sabun cuci', 'pewangi']
+    },
+    {
+      kategori: 'Kesehatan & Kecantikan',
+      subKategori: 'Perawatan & Kosmetik',
+      keywords: ['skincare', 'serum', 'facial wash', 'sabun wajah', 'toner', 'moisturizer', 'sunscreen', 'masker wajah', 'lipstik', 'lip cream', 'bedak', 'foundation', 'parfum', 'body lotion', 'shampoo', 'sabun mandi', 'pasta gigi', 'deodorant', 'vitamin', 'obat', 'minyak kayu putih', 'minyak telon', 'popok', 'pampers']
+    }
+  ];
+
+  for (let i = 0; i < rules.length; i++) {
+    const r = rules[i];
+    for (let j = 0; j < r.keywords.length; j++) {
+      if (text.indexOf(r.keywords[j]) !== -1) {
+        return { kategori: r.kategori, subKategori: r.subKategori };
+      }
+    }
+  }
+
+  // 3. Cek apakah cocok dengan daftar kategori & sub-kategori yang sudah dibuat Admin di toko
+  if (Array.isArray(existingKategoriList)) {
+    for (let i = 0; i < existingKategoriList.length; i++) {
+      const cat = String(existingKategoriList[i] || '').trim();
+      const subs = (subKategoriMap && Array.isArray(subKategoriMap[cat])) ? subKategoriMap[cat] : [];
+      for (let j = 0; j < subs.length; j++) {
+        const sub = String(subs[j] || '').trim();
+        if (sub && text.indexOf(sub.toLowerCase()) !== -1) {
+          return { kategori: cat, subKategori: sub };
+        }
+      }
+      if (cat && text.indexOf(cat.toLowerCase()) !== -1) {
+        return { kategori: cat, subKategori: subs[0] || 'Umum' };
+      }
+    }
+  }
+
+  // 4. Fallback Gemini AI jika API Key tersedia
+  const cleanApiKey = String(geminiApiKey || '').trim();
+  if (cleanApiKey) {
+    try {
+      const prompt =
+        `Klasifikasikan produk berikut ke dalam Kategori Utama dan Sub-Kategori toko online yang paling tepat.\n` +
+        `Kategori Utama yang disarankan: Elektronik, Fashion, Makanan, Aksesoris, Rumah Tangga, Kesehatan & Kecantikan, Top Up, Isi Ulang.\n` +
+        `Nama Produk: ${namaProduk}\n` +
+        `Deskripsi: ${deskripsiProduk || '-'}\n` +
+        `Balas HANYA dalam format JSON murni satu baris seperti ini: {"kategori":"Elektronik","subKategori":"Gadget"}`;
+
+      const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(cleanApiKey);
+      const response = UrlFetchApp.fetch(endpoint, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 80 }
+        }),
+        muteHttpExceptions: true
+      });
+
+      if (response.getResponseCode() === 200) {
+        const json = JSON.parse(response.getContentText());
+        const rawOut = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const matchJson = rawOut.match(/\{[\s\S]*\}/);
+        if (matchJson) {
+          const parsed = JSON.parse(matchJson[0]);
+          if (parsed && parsed.kategori) {
+            return {
+              kategori: String(parsed.kategori).trim(),
+              subKategori: String(parsed.subKategori || 'Umum').trim()
+            };
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 5. Fallback Default Terakhir
+  return {
+    kategori: (rawKatClean && rawKatClean.toLowerCase() !== 'lainnya') ? rawKatClean : 'Rumah Tangga',
+    subKategori: 'Kebutuhan Harian'
+  };
+}
+
+/**
+ * CEK APAKAH PRODUK DARI DATASUPPLIER SUDAH DI-APPROVE OLEH ADMIN DATASUPPLIER
+ */
+function isSupplierProductApproved(item) {
+  if (!item || typeof item !== 'object') return false;
+
+  // Cek boolean flags eksplisit
+  if (item.isApproved === true || item.approved === true || item.is_approved === true || item.verified === true) {
+    return true;
+  }
+  if (item.isApproved === false || item.approved === false || item.is_approved === false) {
+    return false;
+  }
+
+  // Ambil nilai status dari berbagai kemungkinan nama field di DataSupplier
+  const rawStatus = String(
+    item.status ||
+    item.statusApproval ||
+    item.approvalStatus ||
+    item.status_produk ||
+    item.statusProduk ||
+    item.status_verifikasi ||
+    item.verifikasi ||
+    item.approval ||
+    item.state ||
+    item.Status ||
+    item.Status_Approval ||
+    item.Status_Produk ||
+    ''
+  ).toLowerCase().trim();
+
+  // Jika ada kata kunci penolakan / belum disetujui, langsung tolak
+  const rejectedWords = ['pending', 'menunggu', 'ditolak', 'reject', 'rejected', 'draft', 'belum', 'nonaktif', 'inactive', 'suspended', 'batal', 'false', '0'];
+  for (let i = 0; i < rejectedWords.length; i++) {
+    if (rawStatus.indexOf(rejectedWords[i]) !== -1) {
+      return false;
+    }
+  }
+
+  // Kata kunci yang menandakan sudah di-approve oleh admin datasupplier
+  const approvedWords = ['approve', 'approved', 'disetujui', 'setuju', 'aktif', 'active', 'terverifikasi', 'verified', 'tayang', 'publish', 'published', 'acc', 'ok', 'ya', 'true', '1', 'selesai', 'diterima'];
+  for (let i = 0; i < approvedWords.length; i++) {
+    if (rawStatus === approvedWords[i] || rawStatus.indexOf(approvedWords[i]) !== -1) {
+      return true;
+    }
+  }
+
+  // Jika objek berasal dari endpoint khusus produk approved (tidak memiliki field status pending/ditolak)
+  const hasAnyStatusField = (
+    item.status !== undefined ||
+    item.statusApproval !== undefined ||
+    item.approvalStatus !== undefined ||
+    item.status_produk !== undefined ||
+    item.Status !== undefined ||
+    item.Status_Approval !== undefined
+  );
+
+  if (!hasAnyStatusField) {
+    // Jika endpoint memang hanya mengirimkan daftar produk yang sudah tayang/approved
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * EKSTRAK DAFTAR PRODUK DARI BERBAGAI FORMAT JSON RESPONSE DATASUPPLIER GAS
+ */
+function extractProductsFromSupplierResponse(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data !== 'object') return [];
+
+  const candidateKeys = [
+    'produk', 'products', 'data', 'items', 'barang', 'katalog',
+    'approvedProducts', 'produkApproved', 'rows', 'result', 'results', 'list'
+  ];
+
+  for (let i = 0; i < candidateKeys.length; i++) {
+    const key = candidateKeys[i];
+    if (Array.isArray(data[key])) {
+      return data[key];
+    }
+    if (data[key] && typeof data[key] === 'object') {
+      for (let j = 0; j < candidateKeys.length; j++) {
+        const subKey = candidateKeys[j];
+        if (Array.isArray(data[key][subKey])) {
+          return data[key][subKey];
+        }
+      }
+    }
+  }
+  return [];
+}
+
+/**
+ * TARIK & SINKRONKAN OTOMATIS PRODUK APPROVED DARI DATASUPPLIER GAS URL
+ */
+function syncApprovedSupplierProducts(forceSync) {
+  const cache = CacheService.getScriptCache();
+  if (!forceSync && cache.get('HIBUALAMO_DATASUPPLIER_SYNC_LOCK')) {
+    return { success: true, skipped: true, syncedCount: 0 };
+  }
+
+  const settings = getSettingsMap();
+  const autoSyncEnabled = String(settings['DataSupplier_Auto_Sync'] || 'TRUE').toUpperCase() !== 'FALSE';
+  if (!forceSync && !autoSyncEnabled) {
+    return { success: true, skipped: true, syncedCount: 0 };
+  }
+
+  const supplierGasUrl = String(settings['DataSupplier_Gas_Url'] || DEFAULT_DATASUPPLIER_GAS_URL).trim();
+  if (!supplierGasUrl || supplierGasUrl.indexOf('https://script.google.com/') !== 0) {
+    return { success: false, message: 'URL GAS DataSupplier belum valid.' };
+  }
+
+  // Simpan cache 90 detik agar loading toko tetap ringan namun selalu up-to-date
+  cache.put('HIBUALAMO_DATASUPPLIER_SYNC_LOCK', '1', 90);
+
+  let rawProducts = [];
+  const tryEndpoints = [
+    { method: 'get', url: supplierGasUrl },
+    { method: 'get', url: supplierGasUrl + (supplierGasUrl.indexOf('?') === -1 ? '?' : '&') + 'action=getInitialData' },
+    { method: 'get', url: supplierGasUrl + (supplierGasUrl.indexOf('?') === -1 ? '?' : '&') + 'action=getProducts' },
+    { method: 'get', url: supplierGasUrl + (supplierGasUrl.indexOf('?') === -1 ? '?' : '&') + 'action=getData' },
+    { method: 'post', url: supplierGasUrl, payload: { action: 'getInitialData', args: [] } },
+    { method: 'post', url: supplierGasUrl, payload: { action: 'getProducts', args: [] } }
+  ];
+
+  for (let i = 0; i < tryEndpoints.length; i++) {
+    try {
+      const ep = tryEndpoints[i];
+      const fetchOpts = {
+        method: ep.method,
+        followRedirects: true,
+        muteHttpExceptions: true
+      };
+      if (ep.method === 'post') {
+        fetchOpts.contentType = 'application/json';
+        fetchOpts.payload = JSON.stringify(ep.payload);
+      }
+
+      const response = UrlFetchApp.fetch(ep.url, fetchOpts);
+      if (response.getResponseCode() === 200) {
+        const text = response.getContentText();
+        if (text && (text.trim().indexOf('{') === 0 || text.trim().indexOf('[') === 0)) {
+          const parsed = JSON.parse(text);
+          const extracted = extractProductsFromSupplierResponse(parsed);
+          if (extracted && extracted.length > 0) {
+            rawProducts = extracted;
+            break;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!rawProducts || rawProducts.length === 0) {
+    return {
+      success: true,
+      syncedCount: 0,
+      message: 'Belum ada data produk baru dari endpoint DataSupplier.'
+    };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetProduk = ss.getSheetByName('Produk');
+  if (!sheetProduk) {
+    setupDatabaseIfNeeded();
+    sheetProduk = ss.getSheetByName('Produk');
+  }
+  let sheetSupplier = ss.getSheetByName('Supplier');
+  if (!sheetSupplier) {
+    sheetSupplier = ss.insertSheet('Supplier');
+    sheetSupplier.appendRow(['ID_Supplier', 'Nama_Supplier', 'Jenis_Supplier', 'Alamat', 'Kontak_Person']);
+  }
+
+  // Ambil daftar kategori & sub-kategori toko saat ini
+  const kategoriList = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+
+  let subKategoriMap = {
+    'Elektronik': ['Audio', 'Gadget'],
+    'Fashion': ['Pakaian Pria', 'Sepatu'],
+    'Makanan': ['Cemilan', 'Minuman'],
+    'Aksesoris': ['Tas'],
+    'Rumah Tangga': ['Penerangan']
+  };
+  if (settings['Sub_Kategori']) {
+    try {
+      const parsedSub = JSON.parse(String(settings['Sub_Kategori']));
+      if (parsedSub && typeof parsedSub === 'object') subKategoriMap = parsedSub;
+    } catch (e) {}
+  }
+
+  // Indeks produk yang sudah ada di Sheet Produk
+  const existingById = {};
+  const existingByName = {};
+  if (sheetProduk.getLastRow() >= 2) {
+    const rows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 16).getValues();
+    rows.forEach((r, idx) => {
+      const pid = String(r[0] || '').trim();
+      const pnama = String(r[1] || '').trim().toLowerCase();
+      if (pid) existingById[pid] = { rowIndex: idx + 2, row: r };
+      if (pnama) existingByName[pnama] = { rowIndex: idx + 2, row: r };
+    });
+  }
+
+  // Indeks supplier yang sudah ada
+  const existingSuppliers = {};
+  if (sheetSupplier.getLastRow() >= 2) {
+    const sRows = sheetSupplier.getRange(2, 1, sheetSupplier.getLastRow() - 1, 5).getValues();
+    sRows.forEach(r => {
+      const sName = String(r[1] || '').trim().toLowerCase();
+      if (sName) existingSuppliers[sName] = String(r[0]);
+    });
+  }
+
+  let addedCount = 0;
+  let updatedCount = 0;
+  let categoryUpdated = false;
+  const geminiApiKey = String(settings['Gemini_Api_Key'] || '').trim();
+
+  rawProducts.forEach((item, idx) => {
+    if (!isSupplierProductApproved(item)) return;
+
+    const nama = String(
+      item.nama || item.namaProduk || item.nama_produk || item.namaBarang || item.nama_barang || item.title || item.name || item.Nama || item.Nama_Produk || ''
+    ).trim();
+    if (!nama) return;
+
+    const rawId = String(
+      item.id || item.idProduk || item.id_produk || item.kode || item.sku || item.ID_Produk || item.ID || ''
+    ).trim();
+    const prodId = rawId
+      ? (rawId.indexOf('PRD-') === 0 || rawId.indexOf('DS-') === 0 ? rawId : 'DS-' + rawId)
+      : ('DS-' + Utilities.base64EncodeWebSafe(nama).substring(0, 8).toUpperCase());
+
+    const hargaModal = Number(
+      item.hargaSupplier || item.harga_supplier || item.hargaModal || item.harga_modal || item.hargaMitra || item.hargaGrosir || item.Harga_Supplier || item.harga || 0
+    ) || 0;
+
+    const hargaJualRaw = Number(
+      item.hargaDiskon || item.harga_diskon || item.hargaJual || item.harga_jual || item.price || item.Harga_Jual || item.Harga_Diskon || item.harga || 0
+    ) || 0;
+
+    const hargaDiskon = hargaJualRaw > 0 ? hargaJualRaw : (hargaModal > 0 ? Math.round(hargaModal * 1.2) : 0);
+    if (hargaDiskon <= 0) return;
+
+    const hargaAsli = Number(
+      item.hargaAsli || item.harga_asli || item.hargaCoret || item.Harga_Asli || 0
+    ) || Math.round(hargaDiskon * 1.25);
+
+    const stok = item.stok !== undefined ? Number(item.stok) : (item.stock !== undefined ? Number(item.stock) : 50);
+    const gambar = String(
+      item.gambar || item.urlGambar || item.url_gambar || item.foto || item.fotoProduk || item.image || item.URL_Gambar || ''
+    ).trim();
+    const varian = Array.isArray(item.varian)
+      ? item.varian.join(',')
+      : String(item.varian || item.variasi || item.Varian || 'Standar');
+    const deskripsi = String(
+      item.deskripsi || item.keterangan || item.spesifikasi || item.description || item.Deskripsi || ''
+    ).trim();
+
+    const namaSupplier = String(
+      item.namaSupplier || item.nama_supplier || item.namaMitra || item.nama_mitra || item.toko || item.supplier || item.Nama_Supplier || 'Mitra DataSupplier'
+    ).trim();
+    const kontakSupplier = String(
+      item.noWa || item.no_wa || item.kontak || item.telepon || item.waSupplier || '-'
+    ).trim();
+    const alamatSupplier = String(
+      item.alamat || item.alamatSupplier || item.kota || '-'
+    ).trim();
+
+    // Pastikan supplier tercatat di Sheet Supplier
+    let idSupplier = String(item.idSupplier || item.id_supplier || '').trim();
+    const supKey = namaSupplier.toLowerCase();
+    if (supKey && existingSuppliers[supKey]) {
+      idSupplier = existingSuppliers[supKey];
+    } else if (namaSupplier && namaSupplier !== '-') {
+      idSupplier = idSupplier || ('SUP-DS' + Math.floor(100 + Math.random() * 900));
+      existingSuppliers[supKey] = idSupplier;
+      sheetSupplier.appendRow([idSupplier, namaSupplier, 'Mitra DataSupplier', alamatSupplier, kontakSupplier]);
+    }
+
+    const rawKat = String(item.kategori || item.category || item.Kategori || '').trim();
+    const rawSubKat = String(item.subKategori || item.sub_kategori || item.subCategory || '').trim();
+    const combinedRawKat = rawSubKat ? `${rawKat}::${rawSubKat}` : rawKat;
+
+    // Auto-Kategorisasi Pintar
+    const autoCat = autoCategorizeSupplierProduct(
+      nama,
+      deskripsi,
+      combinedRawKat,
+      kategoriList,
+      subKategoriMap,
+      geminiApiKey
+    );
+
+    const finalMainKat = autoCat.kategori || 'Lainnya';
+    const finalSubKat = autoCat.subKategori || '';
+    const finalCombinedKat = finalSubKat ? `${finalMainKat}::${finalSubKat}` : finalMainKat;
+
+    // Tambahkan otomatis ke daftar Kategori & Sub_Kategori toko jika belum ada
+    if (finalMainKat && kategoriList.indexOf(finalMainKat) === -1) {
+      kategoriList.push(finalMainKat);
+      categoryUpdated = true;
+    }
+    if (finalMainKat && finalSubKat) {
+      if (!Array.isArray(subKategoriMap[finalMainKat])) {
+        subKategoriMap[finalMainKat] = [];
+      }
+      if (subKategoriMap[finalMainKat].indexOf(finalSubKat) === -1) {
+        subKategoriMap[finalMainKat].push(finalSubKat);
+        categoryUpdated = true;
+      }
+    }
+
+    const matchExisting = existingById[prodId] || existingByName[nama.toLowerCase()];
+    if (matchExisting) {
+      // Jika produk sudah ada di Sheet Produk, perbarui kategori hanya jika sebelumnya masih kosong/Lainnya tanpa sub-kategori
+      const existingRow = matchExisting.row;
+      const prevKat = String(existingRow[2] || '').trim();
+      const shouldUpdateKat = !prevKat || prevKat.toLowerCase() === 'lainnya' || prevKat.indexOf('::') === -1;
+      const updatedKatToSave = shouldUpdateKat ? finalCombinedKat : prevKat;
+
+      const updatedRow = [
+        existingRow[0] || prodId,
+        nama,
+        updatedKatToSave,
+        hargaModal > 0 ? hargaModal : (Number(existingRow[3]) || 0),
+        hargaAsli > 0 ? hargaAsli : (Number(existingRow[4]) || hargaDiskon),
+        hargaDiskon > 0 ? hargaDiskon : (Number(existingRow[5]) || 0),
+        stok >= 0 ? stok : (Number(existingRow[6]) || 0),
+        Number(existingRow[7]) || 0,
+        Number(existingRow[8]) || 5.0,
+        gambar || String(existingRow[9] || ''),
+        varian || String(existingRow[10] || 'Standar'),
+        existingRow[11] === true || String(existingRow[11]).toUpperCase() === 'TRUE',
+        String(existingRow[12] || 'Mitra'),
+        existingRow[13] || deskripsi,
+        idSupplier || String(existingRow[14] || ''),
+        namaSupplier || String(existingRow[15] || '-')
+      ];
+      sheetProduk.getRange(matchExisting.rowIndex, 1, 1, 16).setValues([updatedRow]);
+      updatedCount++;
+    } else {
+      const newRow = [
+        prodId,
+        nama,
+        finalCombinedKat,
+        hargaModal,
+        hargaAsli,
+        hargaDiskon,
+        stok >= 0 ? stok : 50,
+        0,
+        5.0,
+        gambar,
+        varian,
+        false,
+        'Mitra',
+        deskripsi,
+        idSupplier,
+        namaSupplier
+      ];
+      sheetProduk.appendRow(newRow);
+      addedCount++;
+    }
+  });
+
+  if (categoryUpdated) {
+    setSettingValue('Kategori', kategoriList.join(','));
+    setSettingValue('Sub_Kategori', JSON.stringify(subKategoriMap));
+  }
+
+  if (addedCount > 0 || updatedCount > 0 || categoryUpdated) {
+    SpreadsheetApp.flush();
+  }
+
+  return {
+    success: true,
+    addedCount: addedCount,
+    updatedCount: updatedCount,
+    syncedCount: addedCount + updatedCount,
+    message: `Sinkronisasi DataSupplier berhasil! (${addedCount} produk baru ditambahkan, ${updatedCount} diperbarui dengan Auto-Kategori).`
+  };
+}
+
+/**
+ * ENDPOINT PANEL ADMIN: SINKRONKAN PRODUK APPROVED DARI DATASUPPLIER SEKARANG
+ */
+function adminSyncDataSupplier(pin, customGasUrl, clientFetchedItems) {
+  if (!verifyPin(pin)) return { success: false, message: 'Password / PIN Admin salah!' };
+
+  if (customGasUrl && String(customGasUrl).trim().indexOf('https://script.google.com/') === 0) {
+    setSettingValue('DataSupplier_Gas_Url', String(customGasUrl).trim());
+  }
+
+  const syncRes = syncApprovedSupplierProducts(true);
+  const storeData = getStoreDataInternal(true);
+
+  return {
+    success: true,
+    syncResult: syncRes,
+    message: syncRes.message || 'Sinkronisasi DataSupplier selesai!',
+    produk: storeData.produk,
+    supplier: storeData.supplier,
+    kategoriList: storeData.kategoriList,
+    subKategoriMap: storeData.subKategoriMap
   };
 }
 
@@ -184,6 +784,11 @@ function getStoreDataInternal(isAdmin) {
     setupDatabaseIfNeeded();
   }
 
+  // Tarik otomatis produk yang sudah di-approve dari DataSupplier (berjalan di background dengan cache 90 detik)
+  try {
+    syncApprovedSupplierProducts(false);
+  } catch (e) {}
+
   const settings = getSettingsMap();
   const lockedProductsRaw = String(settings['Locked_Products'] || '');
   const lockedProductIds = lockedProductsRaw.split(',').map(s => s.trim()).filter(Boolean);
@@ -208,6 +813,12 @@ function getStoreDataInternal(isAdmin) {
   // 1. Baca Produk (Harga Supplier & Data Supplier hanya dikirim jika Admin sudah login)
   const sheetProduk = ss.getSheetByName('Produk');
   const produk = [];
+  let autoFixedSheetCategory = false;
+  let kategoriListCurrent = String(settings['Kategori'] || 'Elektronik,Fashion,Makanan,Aksesoris,Rumah Tangga')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+
   if (sheetProduk && sheetProduk.getLastRow() >= 2) {
     const rows = sheetProduk.getRange(2, 1, sheetProduk.getLastRow() - 1, 16).getValues();
     rows.forEach((r, idx) => {
@@ -215,15 +826,49 @@ function getStoreDataInternal(isAdmin) {
       const nama = String(r[1] || '').trim();
       if (!id || !nama) return;
 
-      const rawKat = String(r[2] || 'Lainnya').trim();
+      const rawKat = String(r[2] || '').trim();
       const katParts = rawKat.split('::');
-      const mainKat = String(katParts[0] || 'Lainnya').trim();
-      const subKat = String(katParts[1] || '').trim();
+      let mainKat = String(katParts[0] || '').trim();
+      let subKat = String(katParts[1] || '').trim();
 
       const rawDeskripsi = String(r[13] || '');
       const hasLockMarker = rawDeskripsi.indexOf('[LOCKED]') === 0;
       const cleanDeskripsi = hasLockMarker ? rawDeskripsi.replace(/^\[LOCKED\]\s*/, '') : rawDeskripsi;
       const isLocked = hasLockMarker || lockedProductIds.indexOf(id) !== -1;
+
+      // Jika ada produk dari DataSupplier di Sheet yang kategorinya masih kosong / Lainnya / belum punya Sub-Kategori, otomatis kategorikan!
+      if (!mainKat || mainKat.toLowerCase() === 'lainnya' || mainKat.toLowerCase() === 'umum' || !subKat) {
+        const autoCat = autoCategorizeSupplierProduct(
+          nama,
+          cleanDeskripsi,
+          rawKat,
+          kategoriListCurrent,
+          subKategoriMap,
+          ''
+        );
+        if (!mainKat || mainKat.toLowerCase() === 'lainnya' || mainKat.toLowerCase() === 'umum') {
+          mainKat = autoCat.kategori || 'Lainnya';
+        }
+        if (!subKat && autoCat.subKategori) {
+          subKat = autoCat.subKategori;
+        }
+        const newCombined = subKat ? `${mainKat}::${subKat}` : mainKat;
+        if (newCombined !== rawKat) {
+          sheetProduk.getRange(idx + 2, 3).setValue(newCombined);
+          autoFixedSheetCategory = true;
+        }
+        if (mainKat && kategoriListCurrent.indexOf(mainKat) === -1) {
+          kategoriListCurrent.push(mainKat);
+          setSettingValue('Kategori', kategoriListCurrent.join(','));
+        }
+        if (mainKat && subKat) {
+          if (!Array.isArray(subKategoriMap[mainKat])) subKategoriMap[mainKat] = [];
+          if (subKategoriMap[mainKat].indexOf(subKat) === -1) {
+            subKategoriMap[mainKat].push(subKat);
+            setSettingValue('Sub_Kategori', JSON.stringify(subKategoriMap));
+          }
+        }
+      }
 
       produk.push({
         id: id,
@@ -246,6 +891,9 @@ function getStoreDataInternal(isAdmin) {
         isLocked: isLocked
       });
     });
+  }
+  if (autoFixedSheetCategory) {
+    try { SpreadsheetApp.flush(); } catch (e) {}
   }
 
   // 2. Baca Ulasan
@@ -372,7 +1020,9 @@ function getStoreDataInternal(isAdmin) {
     logoUrl: String(settings['Logo_Url'] || ''),
     geminiApiKey: isAdmin ? String(settings['Gemini_Api_Key'] || '') : '',
     geminiAutoEnhance: String(settings['Gemini_Auto_Enhance'] || 'TRUE').toUpperCase() !== 'FALSE',
-    geminiPrompt: String(settings['Gemini_Prompt'] || 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.')
+    geminiPrompt: String(settings['Gemini_Prompt'] || 'Premium product photography, clean studio lighting, realistic shadows, sharp product details, elegant background, commercial advertising quality.'),
+    dataSupplierGasUrl: isAdmin ? String(settings['DataSupplier_Gas_Url'] || DEFAULT_DATASUPPLIER_GAS_URL) : '',
+    dataSupplierAutoSync: String(settings['DataSupplier_Auto_Sync'] || 'TRUE').toUpperCase() !== 'FALSE'
   };
 
   return {
@@ -1470,6 +2120,8 @@ function adminSavePaymentSettings(pin, newPay) {
     if (newPay.geminiApiKey !== undefined) setSettingValue('Gemini_Api_Key', String(newPay.geminiApiKey).trim());
     if (newPay.geminiAutoEnhance !== undefined) setSettingValue('Gemini_Auto_Enhance', newPay.geminiAutoEnhance ? 'TRUE' : 'FALSE');
     if (newPay.geminiPrompt !== undefined) setSettingValue('Gemini_Prompt', String(newPay.geminiPrompt).trim());
+    if (newPay.dataSupplierGasUrl !== undefined) setSettingValue('DataSupplier_Gas_Url', String(newPay.dataSupplierGasUrl).trim());
+    if (newPay.dataSupplierAutoSync !== undefined) setSettingValue('DataSupplier_Auto_Sync', newPay.dataSupplierAutoSync ? 'TRUE' : 'FALSE');
   }
 
   SpreadsheetApp.flush();
